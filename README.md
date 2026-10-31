@@ -22,17 +22,15 @@ English · [简体中文](docs/README.zh-CN.md)
 **You need:** [Node.js](https://nodejs.org) 20 or newer, and git. Check by running `node -v` and `git --version`. If either says "not found", install it first.
 
 1. **Open a terminal.** On macOS, open Terminal. On Windows, open PowerShell or Windows Terminal.
-2. **Run Commitale on the folder that holds your projects.** Replace the path with your own folder:
+2. **Run it.** If npx asks `Ok to proceed? (y)`, press `y`.
 
    ```bash
-   # macOS / Linux
-   npx commitale ~/code
-
-   # Windows
-   npx commitale D:\projects
+   npx commitale
    ```
 
-   To wrap a single project, `cd` into it and run `npx commitale`. If npx asks `Ok to proceed? (y)`, press `y`.
+   Commitale finds your repositories on its own. Inside a project, it wraps that project. Otherwise it looks under the current folder, then searches your home folder (and your other drives on Windows), and lists what it found.
+
+   Want specific folders only? Name them: `npx commitale ~/code` or `npx commitale D:\projects`.
 3. **Read your year.** The report opens in your browser. Scroll through it; the last page has buttons to download your share card.
 
 The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in the folder you ran the command from, so you can open them again later. Something went wrong? See [Troubleshooting](#troubleshooting).
@@ -87,7 +85,7 @@ Sharing something about work? `--anonymize` hides repo names and commit messages
 ## More ways to run it
 
 ```bash
-npx commitale                       # the repo or folder you're in
+npx commitale                       # finds your repos automatically
 npx commitale ~/code ~/work         # several folders
 npx commitale ~/code --year 2025    # another year
 npx commitale . --all-authors --name "Team Rocket"   # a team report
@@ -130,7 +128,7 @@ Commit the generated `commitale-2026.svg` to your profile repository (`<username
 | --- | --- |
 | `npx` is not recognized, or `command not found` | Install [Node.js](https://nodejs.org) 20 or newer, then open a new terminal window. |
 | PowerShell says `npx.ps1 cannot be loaded because running scripts is disabled` | Run `npx.cmd commitale` instead. Or allow local scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
-| `No git repositories found under …` | Point Commitale at the folder that contains your projects. If they sit more than 3 folders deep, add `--depth 5`. |
+| `No git repositories found …` | Name the folder that holds your projects, e.g. `npx commitale D:\projects`. If they sit more than 3 folders deep, add `--depth 5`. |
 | Fewer repos than expected | Raise `--depth`. Hidden folders, `node_modules`, `vendor` and build folders are skipped on purpose. |
 | `No commits by … in 2026` | Your commits use a different email. Commitale prints the authors it found; pass yours with `-a you@example.com`. |
 | The browser doesn't open | Open `commitale-2026.html` from the folder where you ran the command. |

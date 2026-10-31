@@ -17,7 +17,11 @@ before(() => {
 after(() => rmSync(dir, { recursive: true, force: true }));
 
 function run(...args: string[]) {
-  return spawnSync(process.execPath, [CLI, ...args], { encoding: 'utf8', env: { ...process.env, CI: '1' } });
+  return runIn(process.cwd(), ...args);
+}
+
+function runIn(cwd: string, ...args: string[]) {
+  return spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: 'utf8', env: { ...process.env, CI: '1' } });
 }
 
 test('--json reports stats for the chosen author only', () => {
@@ -70,6 +74,17 @@ test('works from a subfolder of a repo and fails clearly outside one', () => {
   } finally {
     rmSync(empty, { recursive: true, force: true });
   }
+});
+
+test('with no folder: the repos under the current folder, or the repo you are in', () => {
+  const here = runIn(join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json');
+  assert.equal(here.status, 0, here.stderr);
+  assert.equal(JSON.parse(here.stdout).repos, 5);
+  assert.doesNotMatch(here.stderr, /Looking for git repositories/);
+
+  const inside = runIn(join(dir, 'repos', 'nebula-ui', 'src'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json');
+  assert.equal(inside.status, 0, inside.stderr);
+  assert.equal(JSON.parse(inside.stdout).repos, 1);
 });
 
 test('--help and --version', () => {

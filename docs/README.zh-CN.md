@@ -22,17 +22,15 @@
 **准备工作**：需要安装 [Node.js](https://nodejs.org) 20 或更高版本，以及 git。可以运行 `node -v` 和 `git --version` 检查；提示找不到命令的话，先安装它们。
 
 1. **打开终端**：macOS 打开「终端」；Windows 打开 PowerShell 或 Windows Terminal。
-2. **对存放项目的文件夹运行 Commitale**，把路径换成你自己的文件夹：
+2. **运行它**。如果 npx 问 `Ok to proceed? (y)`，按 `y` 继续。
 
    ```bash
-   # macOS / Linux
-   npx commitale ~/code
-
-   # Windows
-   npx commitale D:\projects
+   npx commitale
    ```
 
-   只想看某一个项目，就先 `cd` 进入它的目录，再运行 `npx commitale`。如果 npx 问 `Ok to proceed? (y)`，按 `y` 继续。
+   Commitale 会自己找到你的仓库：在某个项目里运行，就只统计这个项目；否则先找当前文件夹下的项目，再搜索你的用户目录（Windows 上还会搜索其他磁盘），并列出找到了哪些仓库。
+
+   只想统计特定文件夹？直接写上路径：`npx commitale ~/code` 或 `npx commitale D:\projects`。
 3. **查看你的年度报告**：报告会自动在浏览器中打开，向下滑动浏览；最后一页有下载分享卡片的按钮。
 
 报告（`commitale-2026.html`）和卡片（`commitale-2026.svg`）会保存在你运行命令时所在的文件夹里，之后可以随时再打开。遇到问题？请看[常见问题](#常见问题)。
@@ -74,7 +72,7 @@ Commitale 只通过 `git log` 读取本地仓库，然后在当前目录生成�
 ## 更多用法
 
 ```bash
-npx commitale                       # 当前所在的仓库或目录
+npx commitale                       # 自动查找你的仓库
 npx commitale ~/code ~/work         # 多个目录
 npx commitale ~/code --year 2025    # 其他年份
 npx commitale . --all-authors --name "火箭队"   # 团队报告
@@ -117,7 +115,7 @@ npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gith
 | --- | --- |
 | 提示找不到 `npx`（`not recognized` 或 `command not found`） | 安装 [Node.js](https://nodejs.org) 20 或更高版本，然后重新打开一个终端窗口。 |
 | PowerShell 提示 `无法加载文件 npx.ps1，因为在此系统上禁止运行脚本` | 改用 `npx.cmd commitale`。或者运行一次 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`，允许运行本地脚本。 |
-| `No git repositories found under …`（没有找到 git 仓库） | 把路径换成存放项目的那个文件夹。如果项目藏在 3 层以上的子文件夹里，加上 `--depth 5`。 |
+| `No git repositories found …`（没有找到 git 仓库） | 直接写上存放项目的文件夹，例如 `npx commitale D:\projects`。如果项目藏在 3 层以上的子文件夹里，加上 `--depth 5`。 |
 | 找到的仓库比预期少 | 调大 `--depth`。隐藏文件夹、`node_modules`、`vendor` 和构建产物文件夹会被故意跳过。 |
 | `No commits by … in 2026`（没有找到你的提交） | 你的提交用的是另一个邮箱。Commitale 会列出它找到的作者，用 `-a 你的邮箱` 指定你自己。 |
 | 浏览器没有自动打开 | 到你运行命令的文件夹里，手动打开 `commitale-2026.html`。 |

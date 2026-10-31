@@ -1,14 +1,15 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { gitConfig, readCommits, repoRoot } from './git.ts';
-import { detectLang, strings, type Lang } from './i18n.ts';
+import { detectLang, strings, type Lang, type Strings } from './i18n.ts';
 import { renderCard } from './render/card.ts';
 import { renderHtml } from './render/html.ts';
 import { renderTerminal } from './render/terminal.ts';
-import { expandHome, findRepos } from './scan.ts';
+import { expandHome, findRepos, samePath, searchRoots } from './scan.ts';
 import { computeStats } from './stats.ts';
 import type { Commit } from './types.ts';
 
@@ -18,9 +19,12 @@ const HELP = `
   Usage
     npx commitale [folders...]
 
-  Scans the given folders (default: the current one) for git repositories
-  and builds a year-in-review report from your commits. Everything runs
-  locally; nothing is uploaded.
+  Finds your git repositories and builds a year-in-review report from your
+  commits. Everything runs locally; nothing is uploaded.
+
+  With no folders, it uses the repo you're in, or the repos under the
+  current folder, or else searches your home folder (and other drives on
+  Windows).
 
   Options
     -y, --year <year>      Year to wrap (default: this year; last year in January)
@@ -38,6 +42,7 @@ const HELP = `
     -v, --version          Show the version
 
   Examples
+    npx commitale
     npx commitale ~/code
     npx commitale ~/work ~/side-projects --author me@work.com --author me@home.dev
     npx commitale . --all-authors --name "Team Rocket"
@@ -80,14 +85,20 @@ async function main(): Promise<number> {
   const lang: Lang = values.lang === 'zh' || values.lang === 'en' ? values.lang : detectLang();
   const t = strings(lang);
 
-  const roots = (positionals.length > 0 ? positionals : ['.']).map(expandHome);
-  let repos = findRepos(roots, depth);
-  if (repos.length === 0) {
-    // Run from inside a repo's subfolder: use the repo it belongs to.
-    const tops = await Promise.all(roots.map(repoRoot));
-    repos = [...new Set(tops.filter((r): r is string => Boolean(r)))];
+  let repos: string[];
+  if (positionals.length > 0) {
+    const roots = positionals.map(expandHome);
+    repos = findRepos(roots, depth);
+    if (repos.length === 0) {
+      // Run from inside a repo's subfolder: use the repo it belongs to.
+      const tops = await Promise.all(roots.map(repoRoot));
+      repos = [...new Set(tops.filter((r): r is string => Boolean(r)))];
+    }
+    if (repos.length === 0) return fail(t.noRepos(roots.join(', ')));
+  } else {
+    repos = await findDefaultRepos(depth, t);
+    if (repos.length === 0) return fail(t.noReposAnywhere);
   }
-  if (repos.length === 0) return fail(t.noRepos(roots.join(', ')));
 
   process.stderr.write(`${t.scanning(repos.length)}\n`);
   const seen = new Set<string>();
@@ -105,9 +116,8 @@ async function main(): Promise<number> {
   const ids = new Set((values.author ?? []).map((a) => a.toLowerCase()));
   const globalName = await gitConfig('user.name');
   if (!allAuthors && ids.size === 0) {
-    const configured = [await gitConfig('user.email'), globalName];
-    for (const repo of repos) configured.push(await gitConfig('user.email', repo), await gitConfig('user.name', repo));
-    for (const id of configured) if (id) ids.add(id.toLowerCase());
+    const perRepo = await mapLimit(repos, 8, async (repo) => [await gitConfig('user.email', repo), await gitConfig('user.name', repo)]);
+    for (const id of [await gitConfig('user.email'), globalName, ...perRepo.flat()]) if (id) ids.add(id.toLowerCase());
   }
   const mine = allAuthors
     ? all
@@ -132,7 +142,7 @@ async function main(): Promise<number> {
 
   const name =
     values.name ??
-    (allAuthors ? basename(resolve(roots[0])) : (globalName ?? mine[mine.length - 1].authorName));
+    (allAuthors ? basename(resolve(expandHome(positionals[0] ?? '.'))) : (globalName ?? mine[mine.length - 1].authorName));
   const wrapped = computeStats(mine, { year, name, anonymize: values.anonymize });
 
   if (values.json) {
@@ -153,6 +163,26 @@ async function main(): Promise<number> {
 
   if (!values['no-open'] && !process.env.CI && process.stdout.isTTY) openInBrowser(files.html);
   return 0;
+}
+
+/**
+ * With no folder given: the repo you're in; else the repos under the current folder;
+ * else the likely places on this machine (home folder, other drives).
+ */
+async function findDefaultRepos(depth: number, t: Strings): Promise<string[]> {
+  const top = await repoRoot('.');
+  // A home folder kept under git (dotfiles) shouldn't hide every other project.
+  if (top && !samePath(top, homedir())) return findRepos([top], depth);
+  if (!samePath('.', homedir())) {
+    const here = findRepos(['.'], depth);
+    if (here.length > 0) return here;
+  }
+
+  const roots = searchRoots();
+  process.stderr.write(`${t.searching(roots.join(', '))}\n`);
+  const repos = findRepos(roots, depth);
+  if (repos.length > 0) process.stderr.write(`${t.found(repos.map((r) => basename(r)))}\n`);
+  return repos;
 }
 
 function fail(message: string): number {

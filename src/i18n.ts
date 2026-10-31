@@ -63,8 +63,11 @@ export interface Strings {
   cardDays: string;
   cardStreak: string;
 
+  searching: (roots: string) => string;
+  found: (names: string[]) => string;
   scanning: (repos: number) => string;
   noRepos: (roots: string) => string;
+  noReposAnywhere: string;
   noCommits: (year: number, who: string) => string;
   foundAuthors: string;
   tryAuthor: string;
@@ -77,6 +80,10 @@ export interface Strings {
 }
 
 const activeLanguages = (w: Wrapped): number => w.languages.filter((l) => l.share >= 0.05).length;
+
+/** The first few names, then a count of the rest. */
+const listNames = (names: string[], more: (n: number) => string, shown = 8): string =>
+  names.length <= shown ? names.join(', ') : `${names.slice(0, shown).join(', ')} ${more(names.length - shown)}`;
 
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -138,8 +145,13 @@ const en: Strings = {
   cardDays: 'active days',
   cardStreak: 'day streak',
 
+  searching: (roots) => `Looking for git repositories in ${roots}…`,
+  found: (names) =>
+    `Found ${names.length} ${names.length === 1 ? 'repository' : 'repositories'}: ${listNames(names, (more) => `and ${more} more`)}`,
   scanning: (n) => `Reading ${n} ${n === 1 ? 'repository' : 'repositories'}…`,
   noRepos: (roots) => `No git repositories found under ${roots}. Point Commitale at a folder with your projects, e.g. npx commitale ~/code`,
+  noReposAnywhere:
+    'No git repositories found in your home folder or on your drives. Point Commitale at your projects folder, e.g. npx commitale D:\\projects',
   noCommits: (year, who) => `No commits by ${who} in ${year}.`,
   foundAuthors: 'Authors found in these repos:',
   tryAuthor: 'Pick yours with --author <email>, or use --all-authors for a team report.',
@@ -255,8 +267,11 @@ const zh: Strings = {
   cardDays: '天活跃',
   cardStreak: '天连续提交',
 
+  searching: (roots) => `正在 ${roots} 中查找 git 仓库……`,
+  found: (names) => `找到 ${names.length} 个仓库：${listNames(names, (more) => `等 ${more} 个`)}`,
   scanning: (n) => `正在读取 ${n} 个仓库……`,
   noRepos: (roots) => `在 ${roots} 下没有找到 git 仓库。请指定存放项目的目录，例如 npx commitale ~/code`,
+  noReposAnywhere: '在你的用户目录和各个磁盘上都没有找到 git 仓库。请指定存放项目的目录，例如 npx commitale D:\\projects',
   noCommits: (year, who) => `${year} 年没有找到 ${who} 的提交。`,
   foundAuthors: '这些仓库里的作者：',
   tryAuthor: '用 --author <邮箱> 指定你自己，或用 --all-authors 生成团队报告。',
