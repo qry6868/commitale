@@ -49,7 +49,7 @@ export function renderHtml(w: Wrapped, t: Strings, cardSvg: string): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>git wrapped ${w.year} · ${esc(w.name)}</title>
+<title>commitale ${w.year} · ${esc(w.name)}</title>
 <style>${CSS}</style>
 </head>
 <body>
@@ -70,7 +70,7 @@ const count = (n: number, prefix = ''): string =>
   `<span data-count="${n}" data-prefix="${prefix}">${prefix}${fmt(n)}</span>`;
 
 function intro(w: Wrapped, t: Strings): string {
-  return `<div class="kicker" ${reveal(0)}>git wrapped · ${w.year}</div>
+  return `<div class="kicker" ${reveal(0)}>commitale · ${w.year}</div>
 <h1 ${reveal(1)}>${esc(t.hello(w.name, w.year))}</h1>
 <div class="hint" ${reveal(3)}>${esc(t.scroll)} <span class="arrow">↓</span></div>`;
 }
@@ -198,7 +198,7 @@ ${badges}`;
 }
 
 function share(w: Wrapped, t: Strings, cardSvg: string): string {
-  const file = `git-wrapped-${w.year}.svg`;
+  const file = `commitale-${w.year}.svg`;
   return `<div class="kicker" ${reveal(0)}>${esc(t.shareTitle)}</div>
 <div id="card" ${reveal(1)}>${cardSvg}</div>
 <div class="buttons" ${reveal(2)}>
@@ -207,7 +207,7 @@ function share(w: Wrapped, t: Strings, cardSvg: string): string {
   <button data-action="copy" class="ghost">${esc(t.copyText)}</button>
 </div>
 <p class="label" ${reveal(3)}>${esc(t.readmeHint)}</p>
-<code ${reveal(3)}>![git wrapped ${w.year}](./${file})</code>
+<code ${reveal(3)}>![commitale ${w.year}](./${file})</code>
 <p class="footer" ${reveal(4)}>${esc(t.footer)}</p>`;
 }
 
@@ -310,7 +310,7 @@ function save(blob, name) {
 }
 const svgText = () => new XMLSerializer().serializeToString(document.querySelector('#card svg'));
 const actions = {
-  svg: () => save(new Blob([svgText()], { type: 'image/svg+xml' }), 'git-wrapped-' + YEAR + '.svg'),
+  svg: () => save(new Blob([svgText()], { type: 'image/svg+xml' }), 'commitale-' + YEAR + '.svg'),
   png: async () => {
     const img = new Image();
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText());
@@ -319,7 +319,7 @@ const actions = {
     canvas.width = 2400;
     canvas.height = 1260;
     canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob((blob) => save(blob, 'git-wrapped-' + YEAR + '.png'), 'image/png');
+    canvas.toBlob((blob) => save(blob, 'commitale-' + YEAR + '.png'), 'image/png');
   },
   copy: async (button) => {
     try { await navigator.clipboard.writeText(SHARE_TEXT); } catch { prompt('', SHARE_TEXT); return; }

@@ -1,27 +1,27 @@
 <div align="center">
 
-# git wrapped
+# Commitale
 
-**你的编码年度报告。** 像 Spotify Wrapped 一样回顾你这一年的 git 提交。
+**把你这一年的提交，讲成一个故事。** 像 Spotify Wrapped 一样回顾你这一年的 git 提交。
 
 一条命令，扫描你电脑上的所有仓库，数据完全不离开本机。
 
-[![npm](https://img.shields.io/npm/v/git-wrapped?color=8b5cf6)](https://www.npmjs.com/package/git-wrapped)
-[![CI](https://github.com/qry6868/git-wrapped/actions/workflows/ci.yml/badge.svg)](https://github.com/qry6868/git-wrapped/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/commitale?color=8b5cf6)](https://www.npmjs.com/package/commitale)
+[![CI](https://github.com/qry6868/commitale/actions/workflows/ci.yml/badge.svg)](https://github.com/qry6868/commitale/actions/workflows/ci.yml)
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-d946ef)
 [![license](https://img.shields.io/badge/license-MIT-fb7185)](LICENSE)
 
 [English](README.md) · 简体中文
 
-<img src="assets/demo-card.svg" alt="git wrapped 分享卡片：653 次提交、新增 2.2 万行代码、164 天活跃、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子。" width="760">
+<img src="assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、164 天活跃、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子。" width="760">
 
 </div>
 
 ```bash
-npx git-wrapped ~/code
+npx commitale ~/code
 ```
 
-就这么简单。git-wrapped 会找到目录下的所有 git 仓库，读取你今年的提交，然后在浏览器里打开一份可以滑动浏览的年度报告。
+就这么简单。Commitale 会找到目录下的所有 git 仓库，读取你今年的提交，然后在浏览器里打开一份可以滑动浏览的年度报告。
 
 ## 你会看到什么
 
@@ -38,7 +38,7 @@ npx git-wrapped ~/code
 终端里也能直接看：
 
 ```
-  ✦ git wrapped 2026  ·  Alex Chen
+  ✦ commitale 2026  ·  Alex Chen
 
   653 次提交  ·  分布在 5 个仓库，共 164 天
   +21,851  −12,760
@@ -53,17 +53,17 @@ npx git-wrapped ~/code
 
 ## 隐私优先
 
-git-wrapped 只通过 `git log` 读取本地仓库，然后在当前目录生成两个文件：一份 HTML 报告和一张 SVG 卡片。它**不发送任何网络请求**：没有统计上报，不需要 API Token，不上传任何东西。报告离线也能打开。
+Commitale 只通过 `git log` 读取本地仓库，然后在当前目录生成两个文件：一份 HTML 报告和一张 SVG 卡片。它**不发送任何网络请求**：没有统计上报，不需要 API Token，不上传任何东西。报告离线也能打开。
 
 要分享和工作相关的内容？加上 `--anonymize` 即可隐藏仓库名和提交信息。
 
 ## 用法
 
 ```bash
-npx git-wrapped                       # 当前所在的仓库或目录
-npx git-wrapped ~/code ~/work         # 多个目录
-npx git-wrapped ~/code --year 2025    # 其他年份
-npx git-wrapped . --all-authors --name "火箭队"   # 团队报告
+npx commitale                       # 当前所在的仓库或目录
+npx commitale ~/code ~/work         # 多个目录
+npx commitale ~/code --year 2025    # 其他年份
+npx commitale . --all-authors --name "火箭队"   # 团队报告
 ```
 
 | 选项 | 说明 |
@@ -83,20 +83,20 @@ npx git-wrapped . --all-authors --name "火箭队"   # 团队报告
 
 ### 用了多个邮箱提交？
 
-git-wrapped 会自动读取每个仓库里配置的邮箱。其他邮箱（比如旧电脑、GitHub noreply 地址）可以手动添加：
+Commitale 会自动读取每个仓库里配置的邮箱。其他邮箱（比如旧电脑、GitHub noreply 地址）可以手动添加：
 
 ```bash
-npx git-wrapped ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.github.com
+npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.github.com
 ```
 
-如果一个提交都没匹配上，git-wrapped 会列出它找到的所有作者，方便你选出自己。
+如果一个提交都没匹配上，Commitale 会列出它找到的所有作者，方便你选出自己。
 
 ### 把卡片放到 GitHub 个人主页
 
-把生成的 `git-wrapped-2026.svg` 提交到你的个人主页仓库（`<用户名>/<用户名>`），然后在 README 中加入：
+把生成的 `commitale-2026.svg` 提交到你的个人主页仓库（`<用户名>/<用户名>`），然后在 README 中加入：
 
 ```markdown
-![git wrapped 2026](./git-wrapped-2026.svg)
+![commitale 2026](./commitale-2026.svg)
 ```
 
 ## 编程人格
@@ -127,7 +127,7 @@ npx git-wrapped ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gi
 非常欢迎提想法、报 bug 和提 PR。新增编程人格或新语言翻译都是很好的第一次贡献。
 
 ```bash
-git clone https://github.com/qry6868/git-wrapped && cd git-wrapped
+git clone https://github.com/qry6868/commitale && cd commitale
 npm install
 npm run demo     # 生成带有一年历史的模拟仓库并运行
 npm test
@@ -141,6 +141,6 @@ npm test
 
 <div align="center">
 
-如果 git-wrapped 让你会心一笑，**[点个 ⭐](https://github.com/qry6868/git-wrapped)** 让更多开发者看到它。
+如果 commitale 让你会心一笑，**[点个 ⭐](https://github.com/qry6868/commitale)** 让更多开发者看到它。
 
 </div>

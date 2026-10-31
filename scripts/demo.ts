@@ -1,9 +1,9 @@
 /**
  * Builds a set of fake repositories with a year of believable history, then runs
- * git-wrapped on them. Handy for screenshots and for trying changes without
+ * commitale on them. Handy for screenshots and for trying changes without
  * pointing the tool at your own code.
  *
- *   node scripts/demo.ts [--year 2026] [any git-wrapped options]
+ *   node scripts/demo.ts [--year 2026] [any commitale options]
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
@@ -105,7 +105,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const args = process.argv.slice(2);
   const yearIndex = args.indexOf('--year');
   const year = yearIndex >= 0 ? Number(args[yearIndex + 1]) : new Date().getFullYear();
-  const dir = join(tmpdir(), 'git-wrapped-demo');
+  const dir = join(tmpdir(), 'commitale-demo');
   createDemoRepos(dir, year, new Date());
   console.error(`Demo repos created in ${dir}`);
   const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));

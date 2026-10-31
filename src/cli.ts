@@ -13,10 +13,10 @@ import { computeStats } from './stats.ts';
 import type { Commit } from './types.ts';
 
 const HELP = `
-  git-wrapped: your year in code
+  commitale: your year in code
 
   Usage
-    npx git-wrapped [folders...]
+    npx commitale [folders...]
 
   Scans the given folders (default: the current one) for git repositories
   and builds a year-in-review report from your commits. Everything runs
@@ -38,9 +38,9 @@ const HELP = `
     -v, --version          Show the version
 
   Examples
-    npx git-wrapped ~/code
-    npx git-wrapped ~/work ~/side-projects --author me@work.com --author me@home.dev
-    npx git-wrapped . --all-authors --name "Team Rocket"
+    npx commitale ~/code
+    npx commitale ~/work ~/side-projects --author me@work.com --author me@home.dev
+    npx commitale . --all-authors --name "Team Rocket"
 `;
 
 async function main(): Promise<number> {
@@ -144,8 +144,8 @@ async function main(): Promise<number> {
   mkdirSync(outDir, { recursive: true });
   const card = renderCard(wrapped, t);
   const files = {
-    html: join(outDir, `git-wrapped-${year}.html`),
-    svg: join(outDir, `git-wrapped-${year}.svg`),
+    html: join(outDir, `commitale-${year}.html`),
+    svg: join(outDir, `commitale-${year}.svg`),
   };
   writeFileSync(files.svg, card);
   writeFileSync(files.html, renderHtml(wrapped, t, card));

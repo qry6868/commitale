@@ -125,11 +125,11 @@ const en: Strings = {
   copyText: 'Copy share text',
   copied: 'Copied!',
   readmeHint: 'Put the card on your GitHub profile: commit the SVG and add this to your README.',
-  footer: 'Generated locally by git-wrapped. Nothing left your machine.',
+  footer: 'Generated locally by Commitale. Nothing left your machine.',
   shareText: (w) => {
     const p = en.personas[w.personas[0]];
     return `My ${w.year} in code: ${fmt(w.commits)} commits, +${compact(w.added)} lines, ` +
-      `a ${w.longestStreak.days}-day streak. I'm ${p.emoji} ${p.name}. Get yours: npx git-wrapped`;
+      `a ${w.longestStreak.days}-day streak. I'm ${p.emoji} ${p.name}. Get yours: npx commitale`;
   },
 
   cardTitle: (year) => `My ${year} in code`,
@@ -139,7 +139,7 @@ const en: Strings = {
   cardStreak: 'day streak',
 
   scanning: (n) => `Reading ${n} ${n === 1 ? 'repository' : 'repositories'}…`,
-  noRepos: (roots) => `No git repositories found under ${roots}. Point git-wrapped at a folder with your projects, e.g. npx git-wrapped ~/code`,
+  noRepos: (roots) => `No git repositories found under ${roots}. Point Commitale at a folder with your projects, e.g. npx commitale ~/code`,
   noCommits: (year, who) => `No commits by ${who} in ${year}.`,
   foundAuthors: 'Authors found in these repos:',
   tryAuthor: 'Pick yours with --author <email>, or use --all-authors for a team report.',
@@ -242,11 +242,11 @@ const zh: Strings = {
   copyText: '复制分享文案',
   copied: '已复制！',
   readmeHint: '把卡片放到 GitHub 主页：提交这个 SVG，然后把下面这行加进 README。',
-  footer: '由 git-wrapped 在本地生成，数据没有离开你的电脑。',
+  footer: '由 Commitale 在本地生成，数据没有离开你的电脑。',
   shareText: (w) => {
     const p = zh.personas[w.personas[0]];
     return `我的 ${w.year} 编码年度报告：${fmt(w.commits)} 次提交，新增 ${compact(w.added)} 行代码，` +
-      `最长连续 ${w.longestStreak.days} 天。我是 ${p.emoji} ${p.name}！生成你的：npx git-wrapped`;
+      `最长连续 ${w.longestStreak.days} 天。我是 ${p.emoji} ${p.name}！生成你的：npx commitale`;
   },
 
   cardTitle: (year) => `我的 ${year} 编码年度报告`,
@@ -256,7 +256,7 @@ const zh: Strings = {
   cardStreak: '天连续提交',
 
   scanning: (n) => `正在读取 ${n} 个仓库……`,
-  noRepos: (roots) => `在 ${roots} 下没有找到 git 仓库。请指定存放项目的目录，例如 npx git-wrapped ~/code`,
+  noRepos: (roots) => `在 ${roots} 下没有找到 git 仓库。请指定存放项目的目录，例如 npx commitale ~/code`,
   noCommits: (year, who) => `${year} 年没有找到 ${who} 的提交。`,
   foundAuthors: '这些仓库里的作者：',
   tryAuthor: '用 --author <邮箱> 指定你自己，或用 --all-authors 生成团队报告。',

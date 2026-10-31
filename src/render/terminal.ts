@@ -22,7 +22,7 @@ export function renderTerminal(w: Wrapped, t: Strings, files?: { html: string; s
   const out: string[] = [''];
   const line = (s = ''): number => out.push(`  ${s}`);
 
-  line(`${accent('✦')} ${bold(`git wrapped ${w.year}`)}  ${dim('·')}  ${w.name}`);
+  line(`${accent('✦')} ${bold(`commitale ${w.year}`)}  ${dim('·')}  ${w.name}`);
   line();
   line(`${bold(fmt(w.commits))} ${t.commitsLabel}  ${dim('·')}  ${t.commitsSub(w.repos, w.activeDays)}`);
   line(`${plus(`+${fmt(w.added)}`)}  ${minus(`−${fmt(w.deleted)}`)}`);

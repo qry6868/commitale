@@ -11,7 +11,7 @@ const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
 let dir: string;
 
 before(() => {
-  dir = mkdtempSync(join(tmpdir(), 'git-wrapped-test-'));
+  dir = mkdtempSync(join(tmpdir(), 'commitale-test-'));
   createDemoRepos(join(dir, 'repos'), 2025);
 });
 after(() => rmSync(dir, { recursive: true, force: true }));
@@ -38,9 +38,9 @@ test('writes the HTML report and SVG card', () => {
   const out = join(dir, 'out');
   const result = run(join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--out', out, '--lang', 'en');
   assert.equal(result.status, 0, result.stderr);
-  assert.match(result.stdout, /git wrapped 2025/);
-  const html = readFileSync(join(out, 'git-wrapped-2025.html'), 'utf8');
-  const svg = readFileSync(join(out, 'git-wrapped-2025.svg'), 'utf8');
+  assert.match(result.stdout, /commitale 2025/);
+  const html = readFileSync(join(out, 'commitale-2025.html'), 'utf8');
+  const svg = readFileSync(join(out, 'commitale-2025.svg'), 'utf8');
   assert.match(html, /^<!doctype html>/);
   assert.match(html, /The Night Owl/);
   assert.match(svg, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg"/);
@@ -62,7 +62,7 @@ test('works from a subfolder of a repo and fails clearly outside one', () => {
   assert.equal(inside.status, 0, inside.stderr);
   assert.equal(JSON.parse(inside.stdout).repos, 1);
 
-  const empty = mkdtempSync(join(tmpdir(), 'git-wrapped-empty-'));
+  const empty = mkdtempSync(join(tmpdir(), 'commitale-empty-'));
   try {
     const outside = run(empty, '--lang', 'en');
     assert.equal(outside.status, 1);

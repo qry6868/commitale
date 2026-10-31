@@ -1,10 +1,10 @@
 {
-  "name": "git-wrapped",
-  "version": "0.1.0",
-  "description": "Your year in code. A Spotify Wrapped-style report for your git history. 100% local, zero dependencies.",
+  "name": "commitale",
+  "version": "0.1.1",
+  "description": "Your year in code, told as a story. A Spotify Wrapped-style report for your git history. 100% local, zero dependencies.",
   "type": "module",
   "bin": {
-    "git-wrapped": "dist/cli.js"
+    "commitale": "dist/cli.js"
   },
   "files": [
     "dist"
@@ -34,10 +34,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/qry6868/git-wrapped.git"
+    "url": "git+https://github.com/qry6868/commitale.git"
   },
-  "homepage": "https://github.com/qry6868/git-wrapped#readme",
-  "bugs": "https://github.com/qry6868/git-wrapped/issues",
+  "homepage": "https://github.com/qry6868/commitale#readme",
+  "bugs": "https://github.com/qry6868/commitale/issues",
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"

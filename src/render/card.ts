@@ -73,7 +73,7 @@ export function renderCard(w: Wrapped, t: Strings): string {
     <circle cx="1120" cy="20" r="260" fill="#8b5cf6" fill-opacity="0.45" filter="url(#glow)"/>
     <circle cx="80" cy="640" r="220" fill="#ec4899" fill-opacity="0.3" filter="url(#glow)"/>
   </g>
-  <text x="64" y="96" font-size="16" font-weight="700" letter-spacing="3" fill="#c4b5fd">GIT WRAPPED · ${w.year}</text>
+  <text x="64" y="96" font-size="16" font-weight="700" letter-spacing="3" fill="#c4b5fd">COMMITALE · ${w.year}</text>
   <text x="64" y="156" font-size="50" font-weight="800" fill="#fff">${esc(t.cardTitle(w.year))}</text>
   <text x="64" y="200" font-size="24" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
   <rect x="744" y="70" width="392" height="120" rx="24" fill="#fff" fill-opacity="0.08"/>
@@ -85,7 +85,7 @@ export function renderCard(w: Wrapped, t: Strings): string {
   <text x="800" y="438" font-size="15" font-weight="700" letter-spacing="1.5" fill="#c4b5fd">${esc(t.topLanguages.toUpperCase())}</text>
   <g clip-path="url(#bar)"><rect x="800" y="452" width="336" height="12" fill="#6b6385"/>${bar}</g>
   ${legend}
-  <text x="64" y="590" font-size="18" fill="#fff" fill-opacity="0.55" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">$ npx git-wrapped</text>
+  <text x="64" y="590" font-size="18" fill="#fff" fill-opacity="0.55" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">$ npx commitale</text>
 </svg>
 `;
 }
