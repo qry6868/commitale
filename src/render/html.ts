@@ -32,6 +32,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, str
     { body: languages(w, t) },
     { body: repos(w, t) },
     { body: words(w, t) },
+    { body: ai(w, t) },
     // The reveal and the share page wear the personality's own colors.
     { body: persona(w, t), colors: theme.glow },
     { body: share(w, t, cards), colors: theme.glow },
@@ -77,9 +78,12 @@ const count = (n: number, prefix = ''): string =>
 
 /** "+32% vs 2025" under a number, green when up and pink when down. */
 function delta(now: number, before: number | undefined, w: Wrapped, t: Strings, d: number): string {
-  const p = change(now, before);
-  if (p === undefined || !w.previous) return '';
-  return `<p class="delta ${p >= 0 ? 'up' : 'down'}" ${reveal(d)}>${esc(t.vsYear(p, w.previous.year, w.previous.partial))}</p>`;
+  return deltaTag(change(now, before), w.previous, t, d);
+}
+
+function deltaTag(p: number | undefined, base: { year: number; partial: boolean } | undefined, t: Strings, d: number): string {
+  if (p === undefined || !base) return '';
+  return `<p class="delta ${p >= 0 ? 'up' : 'down'}" ${reveal(d)}>${esc(t.vsYear(p, base.year, base.partial))}</p>`;
 }
 
 function intro(w: Wrapped, t: Strings): string {
@@ -201,6 +205,31 @@ function words(w: Wrapped, t: Strings): string {
 <p class="sub" ${reveal(3)}>${esc(t.avgLen(w.avgMessageLength))}</p>`;
 }
 
+function ai(w: Wrapped, t: Strings): string {
+  const a = w.ai;
+  if (!a) return '';
+  const rows = (items: { name: string; tokens: number }[]): string => {
+    const max = items[0]?.tokens || 1;
+    return items
+      .map((r) => `<div class="row"><span>${esc(r.name)}</span><b><i style="width:${(r.tokens / max) * 100}%"></i></b><em>${esc(t.tokens(r.tokens))}</em></div>`)
+      .join('');
+  };
+  const models = a.models.length
+    ? `<div><div class="label">${esc(t.aiModels)}</div><div class="rows ai">${rows(a.models.slice(0, 3))}</div></div>`
+    : '';
+  return `<div class="kicker" ${reveal(0)}>${esc(t.aiTitle)}</div>
+<div class="big" ${reveal(1)}>${esc(t.tokens(a.tokens))}</div>
+<h2 ${reveal(1)}>${esc(t.tokensLabel)}</h2>
+${deltaTag(change(a.tokens, a.previous?.tokens), a.previous, t, 2)}
+<p class="sub" ${reveal(2)}>${esc(t.aiSub(a.sessions, a.activeDays))}</p>
+<div class="ai-grid" ${reveal(3)}>
+  <div><div class="label">${esc(t.aiTools)}</div><div class="rows ai">${rows(a.tools)}</div></div>
+  ${models}
+</div>
+<p class="sub" ${reveal(4)}>${esc(t.aiBusiest(t.date(a.busiestDay.date), t.tokens(a.busiestDay.tokens)))} ${esc(t.aiPerCommit(t.tokens(Math.round(a.tokens / w.commits))))}</p>
+<p class="note" ${reveal(5)}>${esc(t.aiNote)}</p>`;
+}
+
 function persona(w: Wrapped, t: Strings): string {
   const [main, ...others] = w.personas.map((id) => t.personas[id]);
   const badges = others.length
@@ -288,6 +317,10 @@ h2{font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font
 .in .row b i{animation:fill .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:.35s}
 @keyframes fill{from{transform:scaleX(0)}}
 .row em{font-style:normal;color:var(--muted);text-align:right;font-variant-numeric:tabular-nums}
+.ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 32px;margin:24px 0 4px}
+.ai-grid .label{margin-bottom:10px}
+.rows.ai .row{grid-template-columns:minmax(80px,auto) 1fr auto;font-size:15px}
+.note{margin-top:20px;color:var(--muted);font-size:13px;opacity:.8}
 .moments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .moment{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 22px}
 .moment .label{margin:0}

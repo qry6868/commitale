@@ -67,6 +67,19 @@ export interface Strings {
   vsYear: (pct: number, year: number, partial: boolean) => string;
   lastYearStreak: (n: number, partial: boolean) => string;
 
+  tokens: (n: number) => string;
+  tokensLabel: string;
+  aiTitle: string;
+  aiSub: (sessions: number, days: number) => string;
+  aiTools: string;
+  aiModels: string;
+  aiBusiest: (date: string, tokens: string) => string;
+  aiPerCommit: (tokens: string) => string;
+  aiNote: string;
+  cardTokens: string;
+  readingAi: string;
+  terminalAi: string;
+
   searching: (roots: string) => string;
   found: (names: string[]) => string;
   scanning: (repos: number) => string;
@@ -87,6 +100,13 @@ const activeLanguages = (w: Wrapped): number => w.languages.filter((l) => l.shar
 
 /** +32% / −12%, with a real minus sign. */
 const signed = (p: number): string => `${p >= 0 ? '+' : '−'}${Math.abs(p)}%`;
+
+/** Large numbers the Chinese way: 8,600, 3.2 万, 12.4 亿. */
+const zhNumber = (n: number): string => {
+  if (n >= 1e8) return `${parseFloat((n / 1e8).toFixed(1))} 亿`;
+  if (n >= 1e4) return `${parseFloat((n / 1e4).toFixed(1))} 万`;
+  return fmt(n);
+};
 
 /** The first few names, then a count of the rest. */
 const listNames = (names: string[], more: (n: number) => string, shown = 8): string =>
@@ -156,6 +176,19 @@ const en: Strings = {
   vsYear: (p, y, partial) => (partial ? `${signed(p)} vs the same time last year` : `${signed(p)} vs ${y}`),
   lastYearStreak: (n, partial) => `${partial ? 'This time last year' : 'Last year'}: ${fmt(n)} ${n === 1 ? 'day' : 'days'}`,
 
+  tokens: (n) => compact(n),
+  tokensLabel: 'tokens',
+  aiTitle: 'Your AI pair-programming year',
+  aiSub: (sessions, days) => `across ${fmt(sessions)} ${sessions === 1 ? 'session' : 'sessions'}, on ${fmt(days)} ${days === 1 ? 'day' : 'days'}`,
+  aiTools: 'By tool',
+  aiModels: 'Top models',
+  aiBusiest: (date, tokens) => `Your biggest AI day was ${date}: ${tokens} tokens.`,
+  aiPerCommit: (tokens) => `That's about ${tokens} tokens per commit.`,
+  aiNote: 'Includes cached tokens. Read on your machine from usage counts only, never your prompts or code.',
+  cardTokens: 'AI tokens',
+  readingAi: 'Reading AI usage counts from Claude Code and Codex logs…',
+  terminalAi: 'AI usage',
+
   searching: (roots) => `Looking for git repositories in ${roots}…`,
   found: (names) =>
     `Found ${names.length} ${names.length === 1 ? 'repository' : 'repositories'}: ${listNames(names, (more) => `and ${more} more`)}`,
@@ -216,6 +249,11 @@ const en: Strings = {
       emoji: '🧱',
       name: 'The Steady Builder',
       desc: () => 'Commit by commit, day by day, you built something real this year.',
+    },
+    aiCommander: {
+      emoji: '🤖',
+      name: 'The AI Commander',
+      desc: (w) => `${compact(w.ai?.tokens ?? 0)} tokens this year. You don't just write code anymore, you direct it.`,
     },
   },
 };
@@ -282,6 +320,19 @@ const zh: Strings = {
   vsYear: (p, y, partial) => `比${partial ? '去年同期' : ` ${y} 年`}${p >= 0 ? '多' : '少'} ${Math.abs(p)}%`,
   lastYearStreak: (n, partial) => `${partial ? '去年同期' : '去年'}：${fmt(n)} 天`,
 
+  tokens: (n) => zhNumber(n),
+  tokensLabel: 'token',
+  aiTitle: '你的 AI 编程年',
+  aiSub: (sessions, days) => `共 ${fmt(sessions)} 个会话，${fmt(days)} 天在和 AI 结对编程`,
+  aiTools: '按工具',
+  aiModels: '最常用的模型',
+  aiBusiest: (date, tokens) => `用 AI 最多的一天是 ${date}，消耗了 ${tokens} token。`,
+  aiPerCommit: (tokens) => `平均每次提交消耗约 ${tokens} token。`,
+  aiNote: '包含缓存 token。只在你的电脑上读取用量数字，不读取你的提示词和代码。',
+  cardTokens: 'AI token',
+  readingAi: '正在读取 Claude Code 和 Codex 记录中的用量数字……',
+  terminalAi: 'AI 用量',
+
   searching: (roots) => `正在 ${roots} 中查找 git 仓库……`,
   found: (names) => `找到 ${names.length} 个仓库：${listNames(names, (more) => `等 ${more} 个`)}`,
   scanning: (n) => `正在读取 ${n} 个仓库……`,
@@ -340,6 +391,11 @@ const zh: Strings = {
       emoji: '🧱',
       name: '稳健建造者',
       desc: () => '一次提交接着一次提交，你今年踏踏实实地造出了东西。',
+    },
+    aiCommander: {
+      emoji: '🤖',
+      name: 'AI 指挥官',
+      desc: (w) => `今年消耗了 ${zhNumber(w.ai?.tokens ?? 0)} token。你不只是在写代码，你在指挥代码。`,
     },
   },
 };

@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
+import { hasAiSources, isAiCommander, readAiUsage } from './ai.ts';
 import { gitConfig, readCommits, repoRoot } from './git.ts';
 import { detectLang, strings, type Lang, type Strings } from './i18n.ts';
 import { renderCard } from './render/card.ts';
@@ -38,6 +39,8 @@ const HELP = `
         --anonymize        Hide repo names and commit messages
         --json             Print the stats as JSON and write nothing
         --no-open          Don't open the report in a browser
+        --no-ai            Skip the AI usage page (Claude Code and Codex token
+                           counts; prompts and code are never read)
     -h, --help             Show this help
     -v, --version          Show the version
 
@@ -62,6 +65,7 @@ async function main(): Promise<number> {
       anonymize: { type: 'boolean' },
       json: { type: 'boolean' },
       'no-open': { type: 'boolean' },
+      'no-ai': { type: 'boolean' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
     },
@@ -162,6 +166,14 @@ async function main(): Promise<number> {
       longestStreak: before.longestStreak.days,
       partial,
     };
+  }
+
+  if (!values['no-ai'] && hasAiSources()) {
+    process.stderr.write(`${t.readingAi}\n`);
+    wrapped.ai = readAiUsage({ year, cutoff: partial ? cutoff : undefined });
+    if (isAiCommander(wrapped)) {
+      wrapped.personas = ['aiCommander', ...wrapped.personas.filter((p) => p !== 'builder')];
+    }
   }
 
   if (values.json) {

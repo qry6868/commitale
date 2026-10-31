@@ -6,7 +6,7 @@
  *   node scripts/demo.ts [--year 2026] [any commitale options]
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -86,6 +86,65 @@ export function createDemoRepos(dir: string, year: number, until = new Date(Date
   });
 }
 
+/**
+ * Fake Claude Code and Codex logs for `year` and the year before (lighter, so the demo
+ * shows growth), in the shapes those tools write. Returns the environment variables
+ * that point Commitale at them.
+ */
+export function createDemoAi(dir: string, year: number, until = new Date(Date.UTC(year, 11, 31))): Record<string, string> {
+  rmSync(dir, { recursive: true, force: true });
+  const claudeDir = join(dir, 'claude', 'projects', 'demo');
+  mkdirSync(claudeDir, { recursive: true });
+  let message = 0;
+  for (const y of [year - 1, year]) {
+    const rand = mulberry32(y * 7);
+    const scale = y === year ? 1 : 0.6;
+    const end = y === year ? Math.min(until.getTime(), Date.UTC(y, 11, 31)) : Date.UTC(y, 11, 31);
+    for (let day = new Date(Date.UTC(y, 0, 1)); day.getTime() <= end; day.setUTCDate(day.getUTCDate() + 1)) {
+      if (rand() > 0.55 * scale + 0.1) continue;
+      const date = day.toISOString().slice(0, 10);
+      const sessions = 1 + Math.floor(rand() * 3);
+      for (let s = 0; s < sessions; s++) {
+        const id = `${date}-${s}`;
+        const lines: string[] = [];
+        const model = rand() < 0.7 ? 'claude-opus-5-5' : 'claude-sonnet-5-5';
+        for (let m = 0, n = 5 + Math.floor(rand() * 25 * scale); m < n; m++) {
+          const at = `${date}T${String(12 + Math.floor(rand() * 11)).padStart(2, '0')}:${String(Math.floor(rand() * 60)).padStart(2, '0')}:00.000Z`;
+          const usage = {
+            input_tokens: 500 + Math.floor(rand() * 4000),
+            output_tokens: 200 + Math.floor(rand() * 2500),
+            cache_creation_input_tokens: 1000 + Math.floor(rand() * 15000),
+            cache_read_input_tokens: 20000 + Math.floor(rand() * 120000),
+          };
+          const line = JSON.stringify({ type: 'assistant', sessionId: id, timestamp: at, requestId: `req_${message}`, message: { id: `msg_${message++}`, model, usage } });
+          // Claude Code logs a streamed reply once per content block; the reader must count it once.
+          lines.push(line, ...(rand() < 0.3 ? [line] : []));
+        }
+        writeFileSync(join(claudeDir, `${id}.jsonl`), `${lines.join('\n')}\n`);
+      }
+      if (rand() < 0.35) {
+        const [yy, mm, dd] = date.split('-');
+        const codexDir = join(dir, 'codex', 'sessions', yy, mm, dd);
+        mkdirSync(codexDir, { recursive: true });
+        const lines = [JSON.stringify({ timestamp: `${date}T09:00:00.000Z`, type: 'turn_context', payload: { model: 'gpt-5-codex' } })];
+        const total = { input_tokens: 0, cached_input_tokens: 0, output_tokens: 0, total_tokens: 0 };
+        for (let turn = 0, n = 3 + Math.floor(rand() * 12); turn < n; turn++) {
+          const input = 8000 + Math.floor(rand() * 40000);
+          const cached = Math.floor(input * 0.7);
+          const output = 300 + Math.floor(rand() * 3000);
+          total.input_tokens += input;
+          total.cached_input_tokens += cached;
+          total.output_tokens += output;
+          total.total_tokens += input + output;
+          lines.push(JSON.stringify({ timestamp: `${date}T09:${String(turn + 1).padStart(2, '0')}:00.000Z`, type: 'event_msg', payload: { type: 'token_count', info: { total_token_usage: { ...total } } } }));
+        }
+        writeFileSync(join(codexDir, `rollout-${date}.jsonl`), `${lines.join('\n')}\n`);
+      }
+    }
+  }
+  return { CLAUDE_CONFIG_DIR: join(dir, 'claude'), CODEX_HOME: join(dir, 'codex') };
+}
+
 function data(text: string): string {
   return `data ${Buffer.byteLength(text)}\n${text}`;
 }
@@ -110,10 +169,12 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   createDemoRepos(join(dir, 'this-year'), year, new Date());
   // A year of history before it, so the report has something to compare with.
   createDemoRepos(join(dir, 'last-year'), year - 1);
-  console.error(`Demo repos created in ${dir}`);
+  const aiEnv = createDemoAi(join(dir, 'ai-logs'), year, new Date());
+  console.error(`Demo repos and AI logs created in ${dir}`);
   const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
-  const result = spawnSync(process.execPath, [cli, dir, '--author', DEMO_AUTHOR.email, '--name', DEMO_AUTHOR.name, ...args], {
+  const result = spawnSync(process.execPath, [cli, join(dir, 'this-year'), join(dir, 'last-year'), '--author', DEMO_AUTHOR.email, '--name', DEMO_AUTHOR.name, ...args], {
     stdio: 'inherit',
+    env: { ...process.env, ...aiEnv },
   });
   process.exit(result.status ?? 1);
 }

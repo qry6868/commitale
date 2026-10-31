@@ -1,5 +1,6 @@
 import { basename } from 'node:path';
 import { isGenerated, languageOf } from './languages.ts';
+import type { AiStats } from './ai.ts';
 import type { Commit } from './types.ts';
 
 export type PersonaId =
@@ -11,7 +12,8 @@ export type PersonaId =
   | 'cleaner'
   | 'polyglot'
   | 'nineToFive'
-  | 'builder';
+  | 'builder'
+  | 'aiCommander';
 
 export interface Moment {
   date: string;
@@ -51,6 +53,8 @@ export interface Wrapped {
   latestNight?: Moment;
   biggestCommit: Moment & { lines: number };
   personas: PersonaId[];
+  /** AI coding tool usage, when Claude Code or Codex logs exist on this machine. */
+  ai?: AiStats;
   /** The year before, for comparisons; absent when there were no commits then. `partial` = only up
    *  to the same date, because this year is still in progress. */
   previous?: { year: number; commits: number; added: number; activeDays: number; longestStreak: number; partial: boolean };

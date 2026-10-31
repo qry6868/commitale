@@ -13,7 +13,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 
 English · [简体中文](docs/README.zh-CN.md)
 
-<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 164 active days, a 41-day streak, a commit heatmap and top languages. Persona: The Night Owl." width="760">
+<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens, a 41-day streak, a commit heatmap and top languages. Persona: The AI Commander." width="760">
 
 </div>
 
@@ -44,6 +44,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Moments.** Your first commit of the year, your latest-night commit (yes, that 3:47 AM one) and your biggest.
 - **Languages and repos.** Where your time actually went.
 - **Your words.** The words you reach for most in commit messages, and how many commits were fixes.
+- **Your AI year.** The tokens you spent with Claude Code and Codex, how many sessions and days, your top models, your biggest AI day and tokens per commit.
 - **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
 - **A share card in three sizes.** Wide for X, LinkedIn and your GitHub profile; square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
 
@@ -52,8 +53,9 @@ It runs in your terminal too:
 ```
   ✦ commitale 2026  ·  Alex Chen
 
-  653 commits  ·  across 5 repos, on 164 different days
+  653 commits  ·  across 5 repos, on 164 different days  +6% vs the same time last year
   +21,851  −12,760
+  ◆ AI usage  674M tokens  across 498 sessions, on 277 days · Claude Code 97%, Codex 3%
 
   ·▓·░░···▒░░█▓▒█··▒·▒··░█·▒····▒·▒░░··▓░█············
   ▓▒██·▓··██▒░▒▓░█·█░··█▒·▓▒░·█·▒····█▓···▓···········
@@ -73,12 +75,14 @@ It runs in your terminal too:
   Rust        ███░░░░░░░░░░░░░░░░░░░░░  14%
   Go          ███░░░░░░░░░░░░░░░░░░░░░  13%
 
-  You are 🦉 The Night Owl
+  You are 🤖 The AI Commander
 ```
 
 ## Private by design
 
 Commitale reads your local repositories with `git log` and writes two files next to you: an HTML report and an SVG card. It makes **no network requests**: no telemetry, no API tokens, no uploads. The report works offline.
+
+For the AI page, it reads the logs Claude Code (`~/.claude/projects`) and Codex (`~/.codex/sessions`) keep on your machine, and takes **only usage counts, timestamps and model names** from them: never your prompts, replies or code. Don't want it? Add `--no-ai`.
 
 Sharing something about work? `--anonymize` hides repo names and commit messages.
 
@@ -103,6 +107,7 @@ npx commitale . --all-authors --name "Team Rocket"   # a team report
 | `--anonymize` | Hide repo names and commit messages. |
 | `--json` | Print the raw stats as JSON and write no files. |
 | `--no-open` | Don't open the report in a browser. |
+| `--no-ai` | Skip the AI usage page. |
 
 ### Commit from more than one email?
 
@@ -139,6 +144,7 @@ You get the first one that fits, plus badges for the rest.
 
 | | Personality | You earn it when… |
 | --- | --- | --- |
+| 🤖 | The AI Commander | 500M+ tokens with Claude Code or Codex, on at least half the days you commit |
 | 🦉 | The Night Owl | 30%+ of your commits land between 10 PM and 5 AM |
 | 🌅 | The Early Bird | 25%+ of your commits land between 5 and 9 AM |
 | ⚔️ | The Weekend Warrior | 35%+ of your commits happen on weekends |
@@ -155,6 +161,7 @@ You get the first one that fits, plus badges for the rest.
 - **Times** use the timezone you committed in, so a 2 AM commit while traveling is still a 2 AM commit.
 - **Lines** skip lock files, build output, vendored code, minified files and source maps.
 - **Languages** are detected by file extension, with GitHub Linguist colors.
+- **AI tokens** add up input, output and cache reads and writes, the way the tools bill them. A reply that Claude Code logs more than once is counted once.
 
 ## Contributing
 

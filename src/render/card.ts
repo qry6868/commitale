@@ -75,11 +75,15 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   const persona = t.personas[w.personas[0]];
   const prev = w.previous;
 
+  // AI tokens make a better boast than active days, so they take that slot when present.
+  const third = w.ai
+    ? { value: t.tokens(w.ai.tokens), label: t.cardTokens, delta: change(w.ai.tokens, w.ai.previous?.tokens), base: w.ai.previous }
+    : { value: fmt(w.activeDays), label: t.cardDays, delta: change(w.activeDays, prev?.activeDays), base: prev };
   const tiles = [
-    { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits) },
-    { value: compact(w.added), label: t.cardAdded, delta: change(w.added, prev?.added) },
-    { value: fmt(w.activeDays), label: t.cardDays, delta: change(w.activeDays, prev?.activeDays) },
-    { value: fmt(w.longestStreak.days), label: t.cardStreak, delta: change(w.longestStreak.days, prev?.longestStreak) },
+    { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits), base: prev },
+    { value: compact(w.added), label: t.cardAdded, delta: change(w.added, prev?.added), base: prev },
+    third,
+    { value: fmt(w.longestStreak.days), label: t.cardStreak, delta: change(w.longestStreak.days, prev?.longestStreak), base: prev },
   ]
     .map((tile, i) => {
       const T = L.tiles;
@@ -87,9 +91,9 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
       const y = T.y + Math.floor(i / T.cols) * (T.h + T.gap);
       const pad = Math.round(T.num * 0.45);
       const delta =
-        tile.delta === undefined || !prev
+        tile.delta === undefined || !tile.base
           ? ''
-          : `<text x="${x + T.w - pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.delta}" font-weight="700" text-anchor="end" fill="${tile.delta >= 0 ? UP : DOWN}">${esc(t.cardVs(tile.delta, prev.year, prev.partial))}</text>`;
+          : `<text x="${x + T.w - pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.delta}" font-weight="700" text-anchor="end" fill="${tile.delta >= 0 ? UP : DOWN}">${esc(t.cardVs(tile.delta, tile.base.year, tile.base.partial))}</text>`;
       return `<rect x="${x}" y="${y}" width="${T.w}" height="${T.h}" rx="${Math.round(T.h / 6.6)}" fill="#fff" fill-opacity="0.07"/>
   ${delta}
   <text x="${x + pad}" y="${y + Math.round(T.h * 0.58)}" font-size="${T.num}" font-weight="800" fill="#fff">${esc(tile.value)}</text>

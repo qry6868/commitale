@@ -6,7 +6,7 @@ import { renderHtml } from '../src/render/html.ts';
 import { change, computeStats, type PersonaId } from '../src/stats.ts';
 import type { Commit } from '../src/types.ts';
 
-const PERSONAS: PersonaId[] = ['nightOwl', 'earlyBird', 'weekendWarrior', 'marathoner', 'bugHunter', 'cleaner', 'polyglot', 'nineToFive', 'builder'];
+const PERSONAS: PersonaId[] = ['nightOwl', 'earlyBird', 'weekendWarrior', 'marathoner', 'bugHunter', 'cleaner', 'polyglot', 'nineToFive', 'builder', 'aiCommander'];
 const FORMATS: CardFormat[] = ['wide', 'square', 'story'];
 
 function commits(): Commit[] {
@@ -37,7 +37,8 @@ for (const lang of ['en', 'zh'] as const) {
     const t = strings(lang);
     for (const persona of PERSONAS) {
       for (const previous of [undefined, { year: 2025, commits: 2, added: 200, activeDays: 4, longestStreak: 1, partial: false }]) {
-        const w = { ...computeStats(commits(), { year: 2026, name: 'Ada <&>' }), personas: [persona], previous };
+        const ai = previous ? { tokens: 1_240_000_000, input: 1, output: 1, cacheRead: 1, cacheWrite: 1, sessions: 40, activeDays: 3, tools: [{ name: 'Claude Code', tokens: 1_240_000_000 }], models: [], byMonth: new Array(12).fill(0), busiestDay: { date: '2026-01-05', tokens: 9 }, previous: { year: 2025, tokens: 620_000_000, partial: false } } : undefined;
+        const w = { ...computeStats(commits(), { year: 2026, name: 'Ada <&>' }), personas: [persona], previous, ai };
         const cards = Object.fromEntries(FORMATS.map((f) => [f, renderCard(w, t, f)])) as Record<CardFormat, string>;
         for (const f of FORMATS) {
           const [width, height] = CARD_SIZES[f];

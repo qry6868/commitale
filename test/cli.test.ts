@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { createDemoRepos, DEMO_AUTHOR } from '../scripts/demo.ts';
+import { createDemoAi, createDemoRepos, DEMO_AUTHOR } from '../scripts/demo.ts';
 
 const CLI = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
 let dir: string;
@@ -22,7 +22,16 @@ function run(...args: string[]) {
 }
 
 function runIn(cwd: string, ...args: string[]) {
-  return spawnSync(process.execPath, [CLI, ...args], { cwd, encoding: 'utf8', env: { ...process.env, CI: '1' } });
+  return runWith({}, cwd, ...args);
+}
+
+/** Runs the CLI with no AI logs unless `env` points it at some: tests never read the real ones. */
+function runWith(env: Record<string, string>, cwd: string, ...args: string[]) {
+  return spawnSync(process.execPath, [CLI, ...args], {
+    cwd,
+    encoding: 'utf8',
+    env: { ...process.env, CI: '1', CLAUDE_CONFIG_DIR: join(dir, 'no-claude'), CODEX_HOME: join(dir, 'no-codex'), ...env },
+  });
 }
 
 test('--json reports stats for the chosen author only', () => {
@@ -99,6 +108,19 @@ test('compares with last year when there were commits then', () => {
   assert.equal(w.previous.year, 2024);
   assert.ok(w.previous.commits > 100);
   assert.ok(w.previous.longestStreak >= 30);
+});
+
+test('reads AI usage when Claude Code or Codex logs exist, and --no-ai skips it', () => {
+  const env = createDemoAi(join(dir, 'ai'), 2025);
+  const result = runWith(env, process.cwd(), join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json');
+  assert.equal(result.status, 0, result.stderr);
+  const w = JSON.parse(result.stdout);
+  assert.ok(w.ai.tokens > 0);
+  assert.deepEqual(w.ai.tools.map((x: { name: string }) => x.name).sort(), ['Claude Code', 'Codex']);
+  assert.ok(w.ai.sessions > 10);
+
+  const skipped = JSON.parse(runWith(env, process.cwd(), join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json', '--no-ai').stdout);
+  assert.equal(skipped.ai, undefined);
 });
 
 test('--help and --version', () => {

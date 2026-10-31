@@ -2,11 +2,12 @@ export function fmt(n: number): string {
   return n.toLocaleString('en-US');
 }
 
-/** 950, 12.3k, 450k, 1.2M */
+/** 950, 12.3k, 450k, 1.2M, 1.24B */
 export function compact(n: number): string {
   if (n < 1000) return String(n);
   if (n < 1_000_000) return `${trim((n / 1000).toFixed(n < 10_000 ? 1 : 0))}k`;
-  return `${trim((n / 1_000_000).toFixed(1))}M`;
+  if (n < 1_000_000_000) return `${trim((n / 1_000_000).toFixed(1))}M`;
+  return `${parseFloat((n / 1_000_000_000).toFixed(2))}B`;
 }
 
 export function pct(ratio: number): number {

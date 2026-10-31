@@ -29,6 +29,10 @@ export function renderTerminal(w: Wrapped, t: Strings, files?: { html: string; s
   const vs = growth === undefined || !w.previous ? '' : `  ${(growth >= 0 ? plus : minus)(t.vsYear(growth, w.previous.year, w.previous.partial))}`;
   line(`${bold(fmt(w.commits))} ${t.commitsLabel}  ${dim('·')}  ${t.commitsSub(w.repos, w.activeDays)}${vs}`);
   line(`${plus(`+${fmt(w.added)}`)}  ${minus(`−${fmt(w.deleted)}`)}`);
+  if (w.ai) {
+    const tools = w.ai.tools.map((x) => `${x.name} ${pct(x.tokens / w.ai!.tokens)}%`).join(', ');
+    line(`${accent('◆')} ${t.terminalAi}  ${bold(t.tokens(w.ai.tokens))} ${t.tokensLabel}  ${dim(`${t.aiSub(w.ai.sessions, w.ai.activeDays)} · ${tools}`)}`);
+  }
   line();
 
   const HEAT = [HEAT_EMPTY, ...themeFor(w).heat.slice(1)];
