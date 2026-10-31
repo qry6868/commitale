@@ -1,6 +1,6 @@
 {
   "name": "commitale",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Your year in code, told as a story. A Spotify Wrapped-style report for your git history. 100% local, zero dependencies.",
   "type": "module",
   "bin": {

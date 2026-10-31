@@ -11,7 +11,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-d946ef)
 [![license](https://img.shields.io/badge/license-MIT-fb7185)](LICENSE)
 
-English · [简体中文](README.zh-CN.md)
+English · [简体中文](docs/README.zh-CN.md)
 
 <img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 164 active days, a 41-day streak, a commit heatmap and top languages. Persona: The Night Owl." width="760">
 

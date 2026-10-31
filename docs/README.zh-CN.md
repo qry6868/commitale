@@ -9,11 +9,11 @@
 [![npm](https://img.shields.io/npm/v/commitale?color=8b5cf6)](https://www.npmjs.com/package/commitale)
 [![CI](https://github.com/qry6868/commitale/actions/workflows/ci.yml/badge.svg)](https://github.com/qry6868/commitale/actions/workflows/ci.yml)
 ![zero dependencies](https://img.shields.io/badge/dependencies-0-d946ef)
-[![license](https://img.shields.io/badge/license-MIT-fb7185)](LICENSE)
+[![license](https://img.shields.io/badge/license-MIT-fb7185)](../LICENSE)
 
-[English](README.md) · 简体中文
+[English](../README.md) · 简体中文
 
-<img src="assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、164 天活跃、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子。" width="760">
+<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、164 天活跃、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子。" width="760">
 
 </div>
 
@@ -156,11 +156,11 @@ npm run demo     # 生成带有一年历史的模拟仓库并运行
 npm test
 ```
 
-翻译文本都在 [`src/i18n.ts`](src/i18n.ts) 中。
+翻译文本都在 [`src/i18n.ts`](../src/i18n.ts) 中。
 
 ## 许可证
 
-[MIT](LICENSE)
+[MIT](../LICENSE)
 
 <div align="center">
 
