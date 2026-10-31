@@ -17,11 +17,25 @@
 
 </div>
 
-```bash
-npx commitale ~/code
-```
+## 快速开始
 
-就这么简单。Commitale 会找到目录下的所有 git 仓库，读取你今年的提交，然后在浏览器里打开一份可以滑动浏览的年度报告。
+**准备工作**：需要安装 [Node.js](https://nodejs.org) 20 或更高版本，以及 git。可以运行 `node -v` 和 `git --version` 检查；提示找不到命令的话，先安装它们。
+
+1. **打开终端**：macOS 打开「终端」；Windows 打开 PowerShell 或 Windows Terminal。
+2. **对存放项目的文件夹运行 Commitale**，把路径换成你自己的文件夹：
+
+   ```bash
+   # macOS / Linux
+   npx commitale ~/code
+
+   # Windows
+   npx commitale D:\projects
+   ```
+
+   只想看某一个项目，就先 `cd` 进入它的目录，再运行 `npx commitale`。如果 npx 问 `Ok to proceed? (y)`，按 `y` 继续。
+3. **查看你的年度报告**：报告会自动在浏览器中打开，向下滑动浏览；最后一页有下载分享卡片的按钮。
+
+报告（`commitale-2026.html`）和卡片（`commitale-2026.svg`）会保存在你运行命令时所在的文件夹里，之后可以随时再打开。遇到问题？请看[常见问题](#常见问题)。
 
 ## 你会看到什么
 
@@ -57,7 +71,7 @@ Commitale 只通过 `git log` 读取本地仓库，然后在当前目录生成�
 
 要分享和工作相关的内容？加上 `--anonymize` 即可隐藏仓库名和提交信息。
 
-## 用法
+## 更多用法
 
 ```bash
 npx commitale                       # 当前所在的仓库或目录
@@ -79,8 +93,6 @@ npx commitale . --all-authors --name "火箭队"   # 团队报告
 | `--json` | 以 JSON 输出原始统计数据，不写文件。 |
 | `--no-open` | 不自动在浏览器中打开报告。 |
 
-需要 Node.js 20+ 和 git。
-
 ### 用了多个邮箱提交？
 
 Commitale 会自动读取每个仓库里配置的邮箱。其他邮箱（比如旧电脑、GitHub noreply 地址）可以手动添加：
@@ -98,6 +110,17 @@ npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gith
 ```markdown
 ![commitale 2026](./commitale-2026.svg)
 ```
+
+## 常见问题
+
+| 你看到的提示 | 解决方法 |
+| --- | --- |
+| 提示找不到 `npx`（`not recognized` 或 `command not found`） | 安装 [Node.js](https://nodejs.org) 20 或更高版本，然后重新打开一个终端窗口。 |
+| PowerShell 提示 `无法加载文件 npx.ps1，因为在此系统上禁止运行脚本` | 改用 `npx.cmd commitale`。或者运行一次 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`，允许运行本地脚本。 |
+| `No git repositories found under …`（没有找到 git 仓库） | 把路径换成存放项目的那个文件夹。如果项目藏在 3 层以上的子文件夹里，加上 `--depth 5`。 |
+| 找到的仓库比预期少 | 调大 `--depth`。隐藏文件夹、`node_modules`、`vendor` 和构建产物文件夹会被故意跳过。 |
+| `No commits by … in 2026`（没有找到你的提交） | 你的提交用的是另一个邮箱。Commitale 会列出它找到的作者，用 `-a 你的邮箱` 指定你自己。 |
+| 浏览器没有自动打开 | 到你运行命令的文件夹里，手动打开 `commitale-2026.html`。 |
 
 ## 编程人格
 

@@ -1,4 +1,5 @@
 import { existsSync, readdirSync, type Dirent } from 'node:fs';
+import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const SKIP = new Set([
@@ -36,4 +37,14 @@ export function findRepos(roots: string[], maxDepth: number): string[] {
 
   for (const root of roots) walk(resolve(root), 0);
   return [...found].sort();
+}
+
+/**
+ * Expands a leading `~` to the home folder. Unix shells do this before we see the
+ * argument, but PowerShell and cmd pass `~/code` through literally.
+ */
+export function expandHome(path: string): string {
+  if (path === '~') return homedir();
+  if (path.startsWith('~/') || path.startsWith('~\\')) return join(homedir(), path.slice(2));
+  return path;
 }

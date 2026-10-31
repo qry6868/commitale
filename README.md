@@ -17,11 +17,25 @@ English · [简体中文](README.zh-CN.md)
 
 </div>
 
-```bash
-npx commitale ~/code
-```
+## Quick start
 
-That's it. Commitale finds every repository under the folder, reads your commits from this year and opens a scrollable story in your browser.
+**You need:** [Node.js](https://nodejs.org) 20 or newer, and git. Check by running `node -v` and `git --version`. If either says "not found", install it first.
+
+1. **Open a terminal.** On macOS, open Terminal. On Windows, open PowerShell or Windows Terminal.
+2. **Run Commitale on the folder that holds your projects.** Replace the path with your own folder:
+
+   ```bash
+   # macOS / Linux
+   npx commitale ~/code
+
+   # Windows
+   npx commitale D:\projects
+   ```
+
+   To wrap a single project, `cd` into it and run `npx commitale`. If npx asks `Ok to proceed? (y)`, press `y`.
+3. **Read your year.** The report opens in your browser. Scroll through it; the last page has buttons to download your share card.
+
+The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in the folder you ran the command from, so you can open them again later. Something went wrong? See [Troubleshooting](#troubleshooting).
 
 ## What you get
 
@@ -70,7 +84,7 @@ Commitale reads your local repositories with `git log` and writes two files next
 
 Sharing something about work? `--anonymize` hides repo names and commit messages.
 
-## Usage
+## More ways to run it
 
 ```bash
 npx commitale                       # the repo or folder you're in
@@ -92,8 +106,6 @@ npx commitale . --all-authors --name "Team Rocket"   # a team report
 | `--json` | Print the raw stats as JSON and write no files. |
 | `--no-open` | Don't open the report in a browser. |
 
-Requires Node.js 20+ and git.
-
 ### Commit from more than one email?
 
 Commitale picks up the emails configured in each repo automatically. For anything else (an old laptop, a GitHub noreply address) add them:
@@ -111,6 +123,17 @@ Commit the generated `commitale-2026.svg` to your profile repository (`<username
 ```markdown
 ![commitale 2026](./commitale-2026.svg)
 ```
+
+## Troubleshooting
+
+| What you see | What to do |
+| --- | --- |
+| `npx` is not recognized, or `command not found` | Install [Node.js](https://nodejs.org) 20 or newer, then open a new terminal window. |
+| PowerShell says `npx.ps1 cannot be loaded because running scripts is disabled` | Run `npx.cmd commitale` instead. Or allow local scripts once with `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`. |
+| `No git repositories found under …` | Point Commitale at the folder that contains your projects. If they sit more than 3 folders deep, add `--depth 5`. |
+| Fewer repos than expected | Raise `--depth`. Hidden folders, `node_modules`, `vendor` and build folders are skipped on purpose. |
+| `No commits by … in 2026` | Your commits use a different email. Commitale prints the authors it found; pass yours with `-a you@example.com`. |
+| The browser doesn't open | Open `commitale-2026.html` from the folder where you ran the command. |
 
 ## Personalities
 

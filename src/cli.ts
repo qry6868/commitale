@@ -8,7 +8,7 @@ import { detectLang, strings, type Lang } from './i18n.ts';
 import { renderCard } from './render/card.ts';
 import { renderHtml } from './render/html.ts';
 import { renderTerminal } from './render/terminal.ts';
-import { findRepos } from './scan.ts';
+import { expandHome, findRepos } from './scan.ts';
 import { computeStats } from './stats.ts';
 import type { Commit } from './types.ts';
 
@@ -80,7 +80,7 @@ async function main(): Promise<number> {
   const lang: Lang = values.lang === 'zh' || values.lang === 'en' ? values.lang : detectLang();
   const t = strings(lang);
 
-  const roots = positionals.length > 0 ? positionals : ['.'];
+  const roots = (positionals.length > 0 ? positionals : ['.']).map(expandHome);
   let repos = findRepos(roots, depth);
   if (repos.length === 0) {
     // Run from inside a repo's subfolder: use the repo it belongs to.
