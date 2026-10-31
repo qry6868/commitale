@@ -21,6 +21,8 @@ export interface AiStats {
   byMonth: number[];
   busiestDay: { date: string; tokens: number };
   previous?: { year: number; tokens: number; partial: boolean };
+  /** Set once commits are known; see aiStyle(). */
+  style?: AiStyleId;
 }
 
 export interface AiSources {
@@ -77,9 +79,22 @@ export function readAiUsage({ year, cutoff, sources = defaultAiSources() }: AiOp
   return stats;
 }
 
-/** Heavy, regular AI use: half a billion tokens, on at least half the days you committed. */
-export function isAiCommander(w: Wrapped): boolean {
-  return Boolean(w.ai && w.ai.tokens >= 500_000_000 && w.ai.activeDays >= w.activeDays * 0.5);
+export type AiStyleId = 'spotChecker' | 'pairProgrammer' | 'navigator' | 'delegator' | 'vibeCoder';
+
+/**
+ * How much you lean on AI, from tokens per commit. Almost everyone uses AI now, so
+ * the question is how. Anthropic puts the average Claude Code user at about $13 per
+ * active day, tens of millions of tokens, so the middle tier sits around ten million
+ * tokens per commit, with tiers about 4-5x apart on either side.
+ */
+export function aiStyle(w: Wrapped): AiStyleId | undefined {
+  if (!w.ai || w.commits === 0) return undefined;
+  const perCommit = w.ai.tokens / w.commits;
+  if (perCommit < 1_000_000) return 'spotChecker';
+  if (perCommit < 5_000_000) return 'pairProgrammer';
+  if (perCommit < 20_000_000) return 'navigator';
+  if (perCommit < 80_000_000) return 'delegator';
+  return 'vibeCoder';
 }
 
 /**

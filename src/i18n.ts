@@ -1,4 +1,5 @@
 import { compact, fmt, pct } from './format.ts';
+import type { AiStyleId } from './ai.ts';
 import type { PersonaId, Wrapped } from './stats.ts';
 
 export type Lang = 'en' | 'zh';
@@ -79,6 +80,9 @@ export interface Strings {
   cardTokens: string;
   readingAi: string;
   terminalAi: string;
+  aiStyleIntro: string;
+  aiCache: (pct: number) => string;
+  aiStyles: Record<AiStyleId, { emoji: string; name: string; short: string; desc: string }>;
 
   searching: (roots: string) => string;
   found: (names: string[]) => string;
@@ -188,6 +192,15 @@ const en: Strings = {
   cardTokens: 'AI tokens',
   readingAi: 'Reading AI usage counts from Claude Code and Codex logs…',
   terminalAi: 'AI usage',
+  aiStyleIntro: 'Your AI style',
+  aiCache: (p) => `${p}% of them were cache reads: the AI re-reading your conversation on every step, which is why the number is so big.`,
+  aiStyles: {
+    spotChecker: { emoji: '🔍', name: 'The Spot Checker', short: 'Spot Checker', desc: 'You ask AI the odd question and write most of the code yourself.' },
+    pairProgrammer: { emoji: '🤝', name: 'The Pair Programmer', short: 'Pair Coder', desc: 'You and the AI take turns at the keyboard.' },
+    navigator: { emoji: '🧭', name: 'The Navigator', short: 'Navigator', desc: 'You set the direction, the AI drives.' },
+    delegator: { emoji: '🎩', name: 'The Delegator', short: 'Delegator', desc: 'You describe it, the AI ships it.' },
+    vibeCoder: { emoji: '🌊', name: 'The Vibe Coder', short: 'Vibe Coder', desc: 'You bring the vibe, the AI brings the code.' },
+  },
 
   searching: (roots) => `Looking for git repositories in ${roots}…`,
   found: (names) =>
@@ -249,11 +262,6 @@ const en: Strings = {
       emoji: '🧱',
       name: 'The Steady Builder',
       desc: () => 'Commit by commit, day by day, you built something real this year.',
-    },
-    aiCommander: {
-      emoji: '🤖',
-      name: 'The AI Commander',
-      desc: (w) => `${compact(w.ai?.tokens ?? 0)} tokens this year. You don't just write code anymore, you direct it.`,
     },
   },
 };
@@ -332,6 +340,15 @@ const zh: Strings = {
   cardTokens: 'AI token',
   readingAi: '正在读取 Claude Code 和 Codex 记录中的用量数字……',
   terminalAi: 'AI 用量',
+  aiStyleIntro: '你的 AI 搭档类型',
+  aiCache: (p) => `其中 ${p}% 是缓存读取：AI 每走一步都要重读一遍你们的对话，所以数字才这么大。`,
+  aiStyles: {
+    spotChecker: { emoji: '🔍', name: '点到为止', short: '点到为止', desc: 'AI 偶尔问一问，代码主要自己写。' },
+    pairProgrammer: { emoji: '🤝', name: '结对搭档', short: '结对搭档', desc: '你和 AI 轮流握键盘。' },
+    navigator: { emoji: '🧭', name: '领航员', short: '领航员', desc: '你指方向，AI 开车。' },
+    delegator: { emoji: '🎩', name: '甩手掌柜', short: '甩手掌柜', desc: '你提需求，AI 交付。' },
+    vibeCoder: { emoji: '🌊', name: 'Vibe Coder', short: 'Vibe Coder', desc: '你负责感觉，AI 负责代码。' },
+  },
 
   searching: (roots) => `正在 ${roots} 中查找 git 仓库……`,
   found: (names) => `找到 ${names.length} 个仓库：${listNames(names, (more) => `等 ${more} 个`)}`,
@@ -391,11 +408,6 @@ const zh: Strings = {
       emoji: '🧱',
       name: '稳健建造者',
       desc: () => '一次提交接着一次提交，你今年踏踏实实地造出了东西。',
-    },
-    aiCommander: {
-      emoji: '🤖',
-      name: 'AI 指挥官',
-      desc: (w) => `今年消耗了 ${zhNumber(w.ai?.tokens ?? 0)} token。你不只是在写代码，你在指挥代码。`,
     },
   },
 };

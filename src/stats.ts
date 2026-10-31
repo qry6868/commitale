@@ -12,8 +12,7 @@ export type PersonaId =
   | 'cleaner'
   | 'polyglot'
   | 'nineToFive'
-  | 'builder'
-  | 'aiCommander';
+  | 'builder';
 
 export interface Moment {
   date: string;

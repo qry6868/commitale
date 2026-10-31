@@ -1,5 +1,6 @@
 import { calendar, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
+import { aiStyle } from '../ai.ts';
 import { change, type Wrapped } from '../stats.ts';
 import { themeFor } from './theme.ts';
 
@@ -31,7 +32,9 @@ export function renderTerminal(w: Wrapped, t: Strings, files?: { html: string; s
   line(`${plus(`+${fmt(w.added)}`)}  ${minus(`−${fmt(w.deleted)}`)}`);
   if (w.ai) {
     const tools = w.ai.tools.map((x) => `${x.name} ${pct(x.tokens / w.ai!.tokens)}%`).join(', ');
-    line(`${accent('◆')} ${t.terminalAi}  ${bold(t.tokens(w.ai.tokens))} ${t.tokensLabel}  ${dim(`${t.aiSub(w.ai.sessions, w.ai.activeDays)} · ${tools}`)}`);
+    const id = aiStyle(w);
+    const style = id ? `  ${t.aiStyles[id].emoji} ${bold(t.aiStyles[id].name)}` : '';
+    line(`${accent('◆')} ${t.terminalAi}  ${bold(t.tokens(w.ai.tokens))} ${t.tokensLabel}${style}  ${dim(`${t.aiSub(w.ai.sessions, w.ai.activeDays)} · ${tools}`)}`);
   }
   line();
 

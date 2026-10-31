@@ -1,5 +1,6 @@
 import { calendar, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
+import { aiStyle } from '../ai.ts';
 import { change, type Moment, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
 import { themeFor, type Theme } from './theme.ts';
@@ -208,6 +209,8 @@ function words(w: Wrapped, t: Strings): string {
 function ai(w: Wrapped, t: Strings): string {
   const a = w.ai;
   if (!a) return '';
+  const id = aiStyle(w);
+  const style = id && t.aiStyles[id];
   const rows = (items: { name: string; tokens: number }[]): string => {
     const max = items[0]?.tokens || 1;
     return items
@@ -222,12 +225,13 @@ function ai(w: Wrapped, t: Strings): string {
 <h2 ${reveal(1)}>${esc(t.tokensLabel)}</h2>
 ${deltaTag(change(a.tokens, a.previous?.tokens), a.previous, t, 2)}
 <p class="sub" ${reveal(2)}>${esc(t.aiSub(a.sessions, a.activeDays))}</p>
-<div class="ai-grid" ${reveal(3)}>
+${style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${style.emoji}</span><div><div class="label">${esc(t.aiStyleIntro)}</div><div class="ai-name">${esc(style.name)}</div><div class="label">${esc(style.desc)} ${esc(t.aiPerCommit(t.tokens(Math.round(a.tokens / w.commits))))}</div></div></div>` : ''}
+<div class="ai-grid" ${reveal(4)}>
   <div><div class="label">${esc(t.aiTools)}</div><div class="rows ai">${rows(a.tools)}</div></div>
   ${models}
 </div>
-<p class="sub" ${reveal(4)}>${esc(t.aiBusiest(t.date(a.busiestDay.date), t.tokens(a.busiestDay.tokens)))} ${esc(t.aiPerCommit(t.tokens(Math.round(a.tokens / w.commits))))}</p>
-<p class="note" ${reveal(5)}>${esc(t.aiNote)}</p>`;
+<p class="sub" ${reveal(5)}>${esc(t.aiBusiest(t.date(a.busiestDay.date), t.tokens(a.busiestDay.tokens)))}</p>
+<p class="note" ${reveal(5)}>${a.cacheRead > 0 ? `${esc(t.aiCache(pct(a.cacheRead / a.tokens)))} ` : ''}${esc(t.aiNote)}</p>`;
 }
 
 function persona(w: Wrapped, t: Strings): string {
@@ -320,7 +324,11 @@ h2{font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font
 .ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 32px;margin:24px 0 4px}
 .ai-grid .label{margin-bottom:10px}
 .rows.ai .row{grid-template-columns:minmax(80px,auto) 1fr auto;font-size:15px}
-.note{margin-top:20px;color:var(--muted);font-size:13px;opacity:.8}
+.note{margin-top:20px;color:var(--muted);font-size:13px;opacity:.8;line-height:1.5}
+.ai-style{display:flex;gap:18px;align-items:center;margin:20px 0 4px;padding:16px 20px;border-radius:20px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}
+.ai-style .label{margin:0}
+.ai-emoji{font-size:48px;line-height:1}
+.ai-name{font-size:clamp(22px,3.4vw,30px);font-weight:800;margin:2px 0 4px}
 .moments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .moment{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 22px}
 .moment .label{margin:0}

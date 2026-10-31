@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, test } from 'node:test';
-import { isAiCommander, readAiUsage } from '../src/ai.ts';
+import { aiStyle, readAiUsage } from '../src/ai.ts';
 import type { Wrapped } from '../src/stats.ts';
 
 let dir: string;
@@ -69,9 +69,12 @@ test('no logs, or none from that year, means no AI page', () => {
   assert.equal(readAiUsage({ year: 2024, sources: sources() }), undefined);
 });
 
-test('AI Commander needs heavy use on most of your coding days', () => {
-  const w = (tokens: number, aiDays: number) => ({ activeDays: 100, ai: { tokens, activeDays: aiDays } }) as unknown as Wrapped;
-  assert.ok(isAiCommander(w(600_000_000, 60)));
-  assert.ok(!isAiCommander(w(600_000_000, 30)));
-  assert.ok(!isAiCommander(w(100_000_000, 90)));
+test('AI style comes from tokens per commit', () => {
+  const w = (tokens: number, commits = 100) => ({ commits, ai: { tokens } }) as unknown as Wrapped;
+  assert.equal(aiStyle(w(50_000_000)), 'spotChecker'); // 0.5M per commit
+  assert.equal(aiStyle(w(100_000_000)), 'pairProgrammer'); // 1M
+  assert.equal(aiStyle(w(1_000_000_000)), 'navigator'); // 10M
+  assert.equal(aiStyle(w(5_000_000_000)), 'delegator'); // 50M
+  assert.equal(aiStyle(w(9_000_000_000)), 'vibeCoder'); // 90M
+  assert.equal(aiStyle({ commits: 100 } as unknown as Wrapped), undefined);
 });

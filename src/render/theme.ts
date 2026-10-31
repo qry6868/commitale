@@ -63,12 +63,6 @@ const THEMES: Record<PersonaId, Theme> = {
     accent: '#7dd3fc',
     heat: [EMPTY, '#334155', '#0369a1', '#0ea5e9', '#bae6fd'],
   },
-  aiCommander: {
-    bg: ['#0a0a1f', '#1e0b3b', '#06283d'],
-    glow: ['#22d3ee', '#d946ef'],
-    accent: '#67e8f9',
-    heat: [EMPTY, '#155e75', '#0891b2', '#d946ef', '#f5d0fe'],
-  },
   builder: {
     bg: ['#1a1033', '#2a1150', '#3b0d3a'],
     glow: ['#8b5cf6', '#ec4899'],

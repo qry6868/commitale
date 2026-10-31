@@ -6,7 +6,7 @@ import { renderHtml } from '../src/render/html.ts';
 import { change, computeStats, type PersonaId } from '../src/stats.ts';
 import type { Commit } from '../src/types.ts';
 
-const PERSONAS: PersonaId[] = ['nightOwl', 'earlyBird', 'weekendWarrior', 'marathoner', 'bugHunter', 'cleaner', 'polyglot', 'nineToFive', 'builder', 'aiCommander'];
+const PERSONAS: PersonaId[] = ['nightOwl', 'earlyBird', 'weekendWarrior', 'marathoner', 'bugHunter', 'cleaner', 'polyglot', 'nineToFive', 'builder'];
 const FORMATS: CardFormat[] = ['wide', 'square', 'story'];
 
 function commits(): Commit[] {

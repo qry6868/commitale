@@ -1,5 +1,6 @@
 import { calendar, compact, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
+import { aiStyle } from '../ai.ts';
 import { change, type Wrapped } from '../stats.ts';
 import { themeFor } from './theme.ts';
 
@@ -76,8 +77,9 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   const prev = w.previous;
 
   // AI tokens make a better boast than active days, so they take that slot when present.
+  const styleId = aiStyle(w);
   const third = w.ai
-    ? { value: t.tokens(w.ai.tokens), label: t.cardTokens, delta: change(w.ai.tokens, w.ai.previous?.tokens), base: w.ai.previous }
+    ? { value: t.tokens(w.ai.tokens), label: styleId ? `${t.cardTokens} · ${t.aiStyles[styleId].short}` : t.cardTokens, delta: undefined, base: undefined }
     : { value: fmt(w.activeDays), label: t.cardDays, delta: change(w.activeDays, prev?.activeDays), base: prev };
   const tiles = [
     { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits), base: prev },
