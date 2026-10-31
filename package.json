@@ -1,0 +1,45 @@
+{
+  "name": "git-wrapped",
+  "version": "0.1.0",
+  "description": "Your year in code. A Spotify Wrapped-style report for your git history. 100% local, zero dependencies.",
+  "type": "module",
+  "bin": {
+    "git-wrapped": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "dev": "node src/cli.ts",
+    "demo": "node scripts/demo.ts",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "git",
+    "wrapped",
+    "year-in-review",
+    "stats",
+    "commits",
+    "developer",
+    "cli",
+    "heatmap",
+    "github"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/qry6868/git-wrapped.git"
+  },
+  "homepage": "https://github.com/qry6868/git-wrapped#readme",
+  "bugs": "https://github.com/qry6868/git-wrapped/issues",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.9.0"
+  }
+}
