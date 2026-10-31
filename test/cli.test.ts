@@ -13,6 +13,7 @@ let dir: string;
 before(() => {
   dir = mkdtempSync(join(tmpdir(), 'commitale-test-'));
   createDemoRepos(join(dir, 'repos'), 2025);
+  createDemoRepos(join(dir, 'older'), 2024);
 });
 after(() => rmSync(dir, { recursive: true, force: true }));
 
@@ -85,6 +86,19 @@ test('with no folder: the repos under the current folder, or the repo you are in
   const inside = runIn(join(dir, 'repos', 'nebula-ui', 'src'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json');
   assert.equal(inside.status, 0, inside.stderr);
   assert.equal(JSON.parse(inside.stdout).repos, 1);
+});
+
+test('compares with last year when there were commits then', () => {
+  const alone = JSON.parse(run(join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json').stdout);
+  assert.equal(alone.previous, undefined);
+
+  const both = run(join(dir, 'repos'), join(dir, 'older'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json');
+  assert.equal(both.status, 0, both.stderr);
+  const w = JSON.parse(both.stdout);
+  assert.equal(w.commits, alone.commits, 'last year does not leak into this year');
+  assert.equal(w.previous.year, 2024);
+  assert.ok(w.previous.commits > 100);
+  assert.ok(w.previous.longestStreak >= 30);
 });
 
 test('--help and --version', () => {

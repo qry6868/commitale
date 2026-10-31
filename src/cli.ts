@@ -103,7 +103,8 @@ async function main(): Promise<number> {
   process.stderr.write(`${t.scanning(repos.length)}\n`);
   const seen = new Set<string>();
   const all: Commit[] = [];
-  for (const commits of await mapLimit(repos, 8, (repo) => readCommits(repo, year).catch(() => []))) {
+  // Last year too, for the year-over-year comparison.
+  for (const commits of await mapLimit(repos, 8, (repo) => readCommits(repo, year, year - 1).catch(() => []))) {
     for (const c of commits) {
       // The same commit shows up in forks and clones; count it once.
       if (seen.has(c.hash)) continue;
@@ -119,15 +120,22 @@ async function main(): Promise<number> {
     const perRepo = await mapLimit(repos, 8, async (repo) => [await gitConfig('user.email', repo), await gitConfig('user.name', repo)]);
     for (const id of [await gitConfig('user.email'), globalName, ...perRepo.flat()]) if (id) ids.add(id.toLowerCase());
   }
-  const mine = allAuthors
-    ? all
-    : all.filter((c) => ids.has(c.authorEmail) || ids.has(c.authorName.toLowerCase()));
+  const isMine = (c: Commit): boolean => allAuthors || ids.has(c.authorEmail) || ids.has(c.authorName.toLowerCase());
+  const thisYear = all.filter((c) => c.date.startsWith(`${year}-`));
+  const mine = thisYear.filter(isMine);
+  // While this year is still running, compare with the same stretch of last year,
+  // not all twelve months of it.
+  const partial = year === now.getFullYear();
+  const cutoff = `${year - 1}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const mineBefore = all.filter(
+    (c) => c.date.startsWith(`${year - 1}-`) && (!partial || c.date <= cutoff) && isMine(c),
+  );
 
   if (mine.length === 0) {
     console.error(t.noCommits(year, ids.size ? [...ids].join(', ') : '?'));
-    if (all.length > 0) {
+    if (thisYear.length > 0) {
       const counts = new Map<string, number>();
-      for (const c of all) {
+      for (const c of thisYear) {
         const key = `${c.authorName} <${c.authorEmail}>`;
         counts.set(key, (counts.get(key) ?? 0) + 1);
       }
@@ -144,6 +152,17 @@ async function main(): Promise<number> {
     values.name ??
     (allAuthors ? basename(resolve(expandHome(positionals[0] ?? '.'))) : (globalName ?? mine[mine.length - 1].authorName));
   const wrapped = computeStats(mine, { year, name, anonymize: values.anonymize });
+  if (mineBefore.length > 0) {
+    const before = computeStats(mineBefore, { year: year - 1, name });
+    wrapped.previous = {
+      year: year - 1,
+      commits: before.commits,
+      added: before.added,
+      activeDays: before.activeDays,
+      longestStreak: before.longestStreak.days,
+      partial,
+    };
+  }
 
   if (values.json) {
     console.log(JSON.stringify(wrapped, null, 2));
@@ -152,13 +171,17 @@ async function main(): Promise<number> {
 
   const outDir = resolve(values.out ?? '.');
   mkdirSync(outDir, { recursive: true });
-  const card = renderCard(wrapped, t);
+  const cards = {
+    wide: renderCard(wrapped, t, 'wide'),
+    square: renderCard(wrapped, t, 'square'),
+    story: renderCard(wrapped, t, 'story'),
+  };
   const files = {
     html: join(outDir, `commitale-${year}.html`),
     svg: join(outDir, `commitale-${year}.svg`),
   };
-  writeFileSync(files.svg, card);
-  writeFileSync(files.html, renderHtml(wrapped, t, card));
+  writeFileSync(files.svg, cards.wide);
+  writeFileSync(files.html, renderHtml(wrapped, t, cards));
   console.log(renderTerminal(wrapped, t, files));
 
   if (!values['no-open'] && !process.env.CI && process.stdout.isTTY) openInBrowser(files.html);

@@ -49,6 +49,7 @@ export interface Strings {
   personaIntro: string;
   alsoYou: string;
   shareTitle: string;
+  formats: { wide: string; square: string; story: string };
   downloadPng: string;
   downloadSvg: string;
   copyText: string;
@@ -62,6 +63,9 @@ export interface Strings {
   cardAdded: string;
   cardDays: string;
   cardStreak: string;
+  cardVs: (pct: number, year: number, partial: boolean) => string;
+  vsYear: (pct: number, year: number, partial: boolean) => string;
+  lastYearStreak: (n: number, partial: boolean) => string;
 
   searching: (roots: string) => string;
   found: (names: string[]) => string;
@@ -81,6 +85,9 @@ export interface Strings {
 
 const activeLanguages = (w: Wrapped): number => w.languages.filter((l) => l.share >= 0.05).length;
 
+/** +32% / −12%, with a real minus sign. */
+const signed = (p: number): string => `${p >= 0 ? '+' : '−'}${Math.abs(p)}%`;
+
 /** The first few names, then a count of the rest. */
 const listNames = (names: string[], more: (n: number) => string, shown = 8): string =>
   names.length <= shown ? names.join(', ') : `${names.slice(0, shown).join(', ')} ${more(names.length - shown)}`;
@@ -95,7 +102,7 @@ const en: Strings = {
   hour: (h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`,
 
   hello: (name, year) => `${name}, here's your ${year} in code`,
-  scroll: 'Scroll to begin',
+  scroll: 'Tap or press → to begin',
   commitsLabel: 'commits',
   commitsSub: (repos, days) => `across ${fmt(repos)} ${repos === 1 ? 'repo' : 'repos'}, on ${fmt(days)} different days`,
   showedUp: (p) => `You showed up on ${p}% of the days this year.`,
@@ -127,6 +134,7 @@ const en: Strings = {
   personaIntro: 'Your coding personality is…',
   alsoYou: 'Also spotted:',
   shareTitle: 'Share your year',
+  formats: { wide: 'Wide', square: 'Square', story: 'Story' },
   downloadPng: 'Download PNG',
   downloadSvg: 'Download SVG',
   copyText: 'Copy share text',
@@ -144,6 +152,9 @@ const en: Strings = {
   cardAdded: 'lines added',
   cardDays: 'active days',
   cardStreak: 'day streak',
+  cardVs: (p, y, partial) => (partial ? `${signed(p)} YoY` : `${signed(p)} vs ${y}`),
+  vsYear: (p, y, partial) => (partial ? `${signed(p)} vs the same time last year` : `${signed(p)} vs ${y}`),
+  lastYearStreak: (n, partial) => `${partial ? 'This time last year' : 'Last year'}: ${fmt(n)} ${n === 1 ? 'day' : 'days'}`,
 
   searching: (roots) => `Looking for git repositories in ${roots}…`,
   found: (names) =>
@@ -217,7 +228,7 @@ const zh: Strings = {
   hour: (h) => `${h}:00`,
 
   hello: (name, year) => `${name}，这是你的 ${year} 编码年度报告`,
-  scroll: '向下滑动开始',
+  scroll: '点击或按 → 开始',
   commitsLabel: '次提交',
   commitsSub: (repos, days) => `分布在 ${fmt(repos)} 个仓库，共 ${fmt(days)} 天`,
   showedUp: (p) => `今年有 ${p}% 的日子里，你都写了代码。`,
@@ -249,6 +260,7 @@ const zh: Strings = {
   personaIntro: '你的编程人格是……',
   alsoYou: '你还是：',
   shareTitle: '分享你的年度报告',
+  formats: { wide: '横版', square: '方形', story: '竖版' },
   downloadPng: '下载 PNG',
   downloadSvg: '下载 SVG',
   copyText: '复制分享文案',
@@ -266,6 +278,9 @@ const zh: Strings = {
   cardAdded: '行新增代码',
   cardDays: '天活跃',
   cardStreak: '天连续提交',
+  cardVs: (p, y, partial) => (partial ? `同比 ${signed(p)}` : `较 ${y} 年 ${signed(p)}`),
+  vsYear: (p, y, partial) => `比${partial ? '去年同期' : ` ${y} 年`}${p >= 0 ? '多' : '少'} ${Math.abs(p)}%`,
+  lastYearStreak: (n, partial) => `${partial ? '去年同期' : '去年'}：${fmt(n)} 天`,
 
   searching: (roots) => `正在 ${roots} 中查找 git 仓库……`,
   found: (names) => `找到 ${names.length} 个仓库：${listNames(names, (more) => `等 ${more} 个`)}`,

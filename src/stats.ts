@@ -51,6 +51,15 @@ export interface Wrapped {
   latestNight?: Moment;
   biggestCommit: Moment & { lines: number };
   personas: PersonaId[];
+  /** The year before, for comparisons; absent when there were no commits then. `partial` = only up
+   *  to the same date, because this year is still in progress. */
+  previous?: { year: number; commits: number; added: number; activeDays: number; longestStreak: number; partial: boolean };
+}
+
+/** Percent change from `before` to `now`, or undefined when there is nothing to compare. */
+export function change(now: number, before: number | undefined): number | undefined {
+  if (!before) return undefined;
+  return Math.round(((now - before) / before) * 100);
 }
 
 const STOPWORDS = new Set(

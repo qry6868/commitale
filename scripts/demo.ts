@@ -106,7 +106,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const yearIndex = args.indexOf('--year');
   const year = yearIndex >= 0 ? Number(args[yearIndex + 1]) : new Date().getFullYear();
   const dir = join(tmpdir(), 'commitale-demo');
-  createDemoRepos(dir, year, new Date());
+  rmSync(dir, { recursive: true, force: true });
+  createDemoRepos(join(dir, 'this-year'), year, new Date());
+  // A year of history before it, so the report has something to compare with.
+  createDemoRepos(join(dir, 'last-year'), year - 1);
   console.error(`Demo repos created in ${dir}`);
   const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
   const result = spawnSync(process.execPath, [cli, dir, '--author', DEMO_AUTHOR.email, '--name', DEMO_AUTHOR.name, ...args], {

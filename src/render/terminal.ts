@@ -1,6 +1,7 @@
 import { calendar, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
-import type { Wrapped } from '../stats.ts';
+import { change, type Wrapped } from '../stats.ts';
+import { themeFor } from './theme.ts';
 
 const color = Boolean(process.env.FORCE_COLOR) || (Boolean(process.stdout.isTTY) && !process.env.NO_COLOR);
 
@@ -15,7 +16,7 @@ const accent = hex('#c4b5fd');
 const plus = hex('#86efac');
 const minus = hex('#fda4af');
 
-const HEAT = ['#3a3450', '#4c3bcf', '#8b5cf6', '#d946ef', '#fb7185'];
+const HEAT_EMPTY = '#3a3a4a';
 const HEAT_PLAIN = ['·', '░', '▒', '▓', '█'];
 
 export function renderTerminal(w: Wrapped, t: Strings, files?: { html: string; svg: string }): string {
@@ -24,10 +25,13 @@ export function renderTerminal(w: Wrapped, t: Strings, files?: { html: string; s
 
   line(`${accent('✦')} ${bold(`commitale ${w.year}`)}  ${dim('·')}  ${w.name}`);
   line();
-  line(`${bold(fmt(w.commits))} ${t.commitsLabel}  ${dim('·')}  ${t.commitsSub(w.repos, w.activeDays)}`);
+  const growth = change(w.commits, w.previous?.commits);
+  const vs = growth === undefined || !w.previous ? '' : `  ${(growth >= 0 ? plus : minus)(t.vsYear(growth, w.previous.year, w.previous.partial))}`;
+  line(`${bold(fmt(w.commits))} ${t.commitsLabel}  ${dim('·')}  ${t.commitsSub(w.repos, w.activeDays)}${vs}`);
   line(`${plus(`+${fmt(w.added)}`)}  ${minus(`−${fmt(w.deleted)}`)}`);
   line();
 
+  const HEAT = [HEAT_EMPTY, ...themeFor(w).heat.slice(1)];
   const level = heatLevels(w.daily);
   const { cells, cols } = calendar(w.year);
   const grid = Array.from({ length: 7 }, () => new Array<string>(cols).fill(' '));

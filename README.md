@@ -37,7 +37,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 
 ## What you get
 
-- **The big numbers.** Commits, lines added and deleted, active days, repos touched.
+- **The big numbers.** Commits, lines added and deleted, active days, repos touched, and how they compare with last year.
 - **Your year as a heatmap.** Every day, across every repo: your private work too, not just what GitHub sees.
 - **Streaks and spikes.** Your longest run of consecutive days and your busiest day.
 - **Your rhythm.** The hour you peak, your power weekday, your biggest month.
@@ -45,7 +45,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Languages and repos.** Where your time actually went.
 - **Your words.** The words you reach for most in commit messages, and how many commits were fixes.
 - **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
-- **A share card.** A 1200×630 card, ready for X, LinkedIn or your GitHub profile README (download as PNG or SVG).
+- **A share card in three sizes.** Wide for X, LinkedIn and your GitHub profile; square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
 
 It runs in your terminal too:
 

@@ -35,19 +35,22 @@ export async function repoRoot(dir: string): Promise<string | undefined> {
   }
 }
 
-/** Every non-merge commit on any branch whose author date falls in `year`. */
-export async function readCommits(repo: string, year: number): Promise<Commit[]> {
+/** Every non-merge commit on any branch whose author date falls in `fromYear`..`year`. */
+export async function readCommits(repo: string, year: number, fromYear = year): Promise<Commit[]> {
   const out = await git([
     '-C', repo,
     '-c', 'core.quotepath=off',
     '-c', 'log.showSignature=false',
     'log', '--all', '--no-merges', '--numstat',
     // --since/--until filter on committer date, so leave slack and filter on author date below.
-    `--since=${year - 1}-12-25`,
+    `--since=${fromYear - 1}-12-25`,
     `--until=${year + 1}-01-07`,
     `--pretty=format:${RS}%H${US}%an${US}%ae${US}%aI${US}%s`,
   ]);
-  return parseLog(out, repo).filter((c) => c.date.startsWith(`${year}-`));
+  return parseLog(out, repo).filter((c) => {
+    const y = Number(c.date.slice(0, 4));
+    return y >= fromYear && y <= year;
+  });
 }
 
 export function parseLog(out: string, repo: string): Commit[] {
