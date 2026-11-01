@@ -22,7 +22,8 @@ interface Layout {
   kicker: [y: number, size: number];
   title: [y: number, size: number];
   name: [y: number, size: number];
-  persona: { x: number; y: number; w: number; h: number; emoji: number; label: number; name: number };
+  /** `desc`: font size for the persona's description, on cards with room for it. */
+  persona: { x: number; y: number; w: number; h: number; emoji: number; label: number; name: number; desc?: number };
   tiles: { y: number; cols: number; w: number; h: number; gap: number; num: number; label: number; delta: number };
   heat: { y: number; step: number };
   /** `list`: a title, a bar and one row per language; `inline`: a bar and one legend row. */
@@ -59,10 +60,10 @@ const LAYOUTS: Record<CardFormat, Layout> = {
     kicker: [220, 24],
     title: [318, 72],
     name: [384, 36],
-    persona: { x: 88, y: 450, w: 904, h: 220, emoji: 120, label: 24, name: 52 },
-    tiles: { y: 710, cols: 2, w: 440, h: 210, gap: 24, num: 88, label: 28, delta: 24 },
-    heat: { y: 1218, step: 17 },
-    langs: { mode: 'list', x: 88, y: 1420, w: 904, rows: 4, size: 32 },
+    persona: { x: 88, y: 450, w: 904, h: 300, emoji: 120, label: 24, name: 52, desc: 26 },
+    tiles: { y: 790, cols: 2, w: 440, h: 210, gap: 24, num: 88, label: 28, delta: 24 },
+    heat: { y: 1298, step: 17 },
+    langs: { mode: 'list', x: 88, y: 1490, w: 904, rows: 4, size: 32 },
     footer: [1820, 30],
   },
 };
@@ -134,7 +135,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
   <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="800" fill="#fff">${esc(t.cardTitle(w.year))}</text>
   <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
-  ${personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name)}
+  ${personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name, persona.desc(w))}
   ${tiles}
   ${heat}
   ${languages(w, t, L, theme.accent, format)}
@@ -143,13 +144,47 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
 `;
 }
 
-function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, name: string): string {
+function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, name: string, desc: string): string {
   const P = L.persona;
   const textX = P.x + P.emoji * 2;
-  return `<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${Math.round(P.h / 5)}" fill="#fff" fill-opacity="0.08"/>
-  <text x="${P.x + Math.round(P.emoji / 2)}" y="${P.y + Math.round(P.h / 2 + P.emoji * 0.36)}" font-size="${P.emoji}">${emoji}</text>
+  const box = `<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${Math.round(Math.min(P.h, 220) / 5)}" fill="#fff" fill-opacity="0.08"/>
+  <text x="${P.x + Math.round(P.emoji / 2)}" y="${P.y + Math.round(P.h / 2 + P.emoji * 0.36)}" font-size="${P.emoji}">${emoji}</text>`;
+  if (!P.desc) {
+    return `${box}
   <text x="${textX}" y="${P.y + Math.round(P.h / 2 - P.name * 0.3)}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
   <text x="${textX}" y="${P.y + Math.round(P.h / 2 + P.name * 0.75)}" font-size="${P.name}" font-weight="800" fill="#fff">${esc(name)}</text>`;
+  }
+  // SVG doesn't wrap text, so break the description into at most two lines ourselves.
+  const lines = wrap(desc, Math.floor((P.x + P.w - 40 - textX) / (P.desc * 0.52)), 2);
+  const top = P.y + Math.round((P.h - (P.label + P.name * 1.4 + lines.length * P.desc * 1.4)) / 2);
+  return `${box}
+  <text x="${textX}" y="${top + P.label}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
+  <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="800" fill="#fff">${esc(name)}</text>
+  ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
+}
+
+/**
+ * Greedy line breaking for SVG text. `width` is in half-em units: a Latin character
+ * takes one, a CJK character two. Words stay whole; CJK breaks anywhere.
+ */
+export function wrap(text: string, width: number, maxLines: number): string[] {
+  const units = (s: string): number => [...s].reduce((n, ch) => n + (/[⺀-鿿가-힯＀-￯]/.test(ch) ? 2 : 1), 0);
+  const tokens = text.match(/[⺀-鿿가-힯＀-￯]|[^\s⺀-鿿가-힯＀-￯]+\s*|\s+/g) ?? [];
+  const lines: string[] = [];
+  let line = '';
+  for (const token of tokens) {
+    if (line && units(line + token.trimEnd()) > width) {
+      lines.push(line.trimEnd());
+      line = token.trimStart();
+    } else {
+      line += token;
+    }
+  }
+  if (line.trim()) lines.push(line.trimEnd());
+  if (lines.length <= maxLines) return lines;
+  const kept = lines.slice(0, maxLines);
+  kept[maxLines - 1] = `${kept[maxLines - 1].replace(/[\s,.，。]*$/, '')}…`;
+  return kept;
 }
 
 function languages(w: Wrapped, t: Strings, L: Layout, accent: string, id: string): string {

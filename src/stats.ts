@@ -45,6 +45,8 @@ export interface Wrapped {
   languages: { name: string; color: string; lines: number; share: number }[];
   topRepos: { name: string; commits: number; added: number; deleted: number }[];
   words: { word: string; count: number }[];
+  /** Commit counts by type, largest first, with empty types left out. */
+  commitTypes: { type: CommitType; count: number }[];
   fixCommits: number;
   avgMessageLength: number;
   firstCommit: Moment;
@@ -68,8 +70,35 @@ export function change(now: number, before: number | undefined): number | undefi
 const STOPWORDS = new Set(
   ('the and for with from into this that are was were has have not but you your all can use ' +
     'when then than its out via more some also add adds added update updates updated ' +
-    'merge branch main master pull request remote tracking origin').split(' '),
+    'merge branch main master pull request remote tracking origin ' +
+    // Conventional-commit prefixes: the commit types chart already shows these.
+    'feat fix chore docs refactor test tests perf style build').split(' '),
 );
+
+export type CommitType = 'feature' | 'fix' | 'refactor' | 'docs' | 'test' | 'chore' | 'other';
+
+const CONVENTIONAL: Record<string, CommitType> = {
+  feat: 'feature', feature: 'feature', fix: 'fix', hotfix: 'fix',
+  refactor: 'refactor', perf: 'refactor', style: 'refactor',
+  docs: 'docs', doc: 'docs', test: 'test', tests: 'test',
+  chore: 'chore', build: 'chore', ci: 'chore', deps: 'chore', release: 'chore',
+};
+// Checked in order when a message has no conventional prefix.
+const KEYWORDS: [CommitType, RegExp][] = [
+  ['fix', /\b(fix(e[sd])?|bug(fix)?|hotfix|patch(e[sd])?|revert)\b|修复|修正|bug/i],
+  ['test', /\b(tests?|specs?)\b|测试/i],
+  ['docs', /\b(docs?|readme|changelog|comments?)\b|文档|注释/i],
+  ['refactor', /\b(refactor|clean(up)?|rename|simplif(y|ied)|restructure|tidy|optimi[sz]e)\b|重构|优化|整理/i],
+  ['chore', /\b(bump|deps?|dependenc(y|ies)|upgrade|release|version|ci|config|lint)\b|依赖|升级|发布|配置/i],
+  ['feature', /\b(add(s|ed)?|implement|introduce|support|new|create|feat)\b|新增|添加|实现|支持|功能/i],
+];
+
+/** What a commit was for, from its conventional prefix or failing that its wording. */
+export function commitType(subject: string): CommitType {
+  const prefix = /^(\w+)(\([^)]*\))?!?:/.exec(subject.trim().toLowerCase());
+  if (prefix && CONVENTIONAL[prefix[1]]) return CONVENTIONAL[prefix[1]];
+  return KEYWORDS.find(([, re]) => re.test(subject))?.[0] ?? 'other';
+}
 const FIX_RE = /\b(fix(e[sd])?|bug(fix)?|hotfix|patch(e[sd])?)\b|修复|修正|修改bug/i;
 
 export interface StatsOptions {
@@ -95,6 +124,7 @@ export function computeStats(input: Commit[], opts: StatsOptions): Wrapped {
   let added = 0;
   let deleted = 0;
   let fixCommits = 0;
+  const types = new Map<CommitType, number>();
   let messageChars = 0;
   let biggest = { commit: commits[0], lines: -1 };
   let latestNight: { commit: Commit; score: number } | undefined;
@@ -130,6 +160,8 @@ export function computeStats(input: Commit[], opts: StatsOptions): Wrapped {
     repoStats.set(c.repo, repo);
 
     if (FIX_RE.test(c.subject)) fixCommits++;
+    const type = commitType(c.subject);
+    types.set(type, (types.get(type) ?? 0) + 1);
     messageChars += [...c.subject].length;
     for (const seg of segmenter.segment(c.subject.toLowerCase())) {
       if (!seg.isWordLike || /^\d+$/.test(seg.segment)) continue;
@@ -206,6 +238,7 @@ export function computeStats(input: Commit[], opts: StatsOptions): Wrapped {
     topRepos,
     words,
     fixCommits,
+    commitTypes: [...types].map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count),
     avgMessageLength: Math.round(messageChars / n),
     firstCommit: moment(commits[0]),
     lastCommit: moment(commits[n - 1]),

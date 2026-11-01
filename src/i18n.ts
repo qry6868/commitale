@@ -1,6 +1,6 @@
 import { compact, fmt, pct } from './format.ts';
 import type { AiStyleId } from './ai.ts';
-import type { PersonaId, Wrapped } from './stats.ts';
+import type { CommitType, PersonaId, Wrapped } from './stats.ts';
 
 export type Lang = 'en' | 'zh';
 
@@ -83,6 +83,11 @@ export interface Strings {
   aiStyleIntro: string;
   aiBreakdownTitle: string;
   music: string;
+  typesTitle: string;
+  types: Record<CommitType, string>;
+  wordsCloud: string;
+  summaryTitle: (year: number) => string;
+  shareHint: string;
   soundHint: string;
   monthsTitle: string;
   weekdaysTitle: string;
@@ -204,6 +209,11 @@ const en: Strings = {
   aiStyleIntro: 'Your AI style',
   aiBreakdownTitle: 'Where the tokens went',
   music: 'Music',
+  typesTitle: 'What you committed',
+  types: { feature: 'Features', fix: 'Fixes', refactor: 'Refactors', docs: 'Docs', test: 'Tests', chore: 'Chores', other: 'Other' },
+  wordsCloud: 'Words you used most',
+  summaryTitle: (y) => `That was your ${y}`,
+  shareHint: 'Pick a size, then download it or copy the caption.',
   soundHint: 'Best with sound on',
   monthsTitle: 'Commits by month',
   weekdaysTitle: 'By weekday',
@@ -361,6 +371,11 @@ const zh: Strings = {
   aiStyleIntro: '你的 AI 搭档类型',
   aiBreakdownTitle: 'token 都花在了哪里',
   music: '音乐',
+  typesTitle: '你都提交了什么',
+  types: { feature: '新功能', fix: '修 bug', refactor: '重构', docs: '文档', test: '测试', chore: '杂项', other: '其他' },
+  wordsCloud: '最常用的词',
+  summaryTitle: (y) => `这就是你的 ${y}`,
+  shareHint: '选一个尺寸，下载图片或复制分享文案。',
   soundHint: '建议打开声音',
   monthsTitle: '每月提交',
   weekdaysTitle: '按星期',

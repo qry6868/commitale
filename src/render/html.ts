@@ -1,7 +1,7 @@
 import { calendar, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type Moment, type Wrapped } from '../stats.ts';
+import { change, type CommitType, type Moment, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
 import { themeFor, type Theme } from './theme.ts';
 
@@ -254,16 +254,42 @@ function repos(w: Wrapped, t: Strings): string {
   return `<div class="kicker" ${reveal(0)}>${esc(t.reposTitle)}</div><ol class="repos">${rows}</ol>`;
 }
 
+/** Fixed colours per commit type (validated categorical slots; "other" stays neutral). */
+const TYPE_COLORS: Record<CommitType, string> = {
+  feature: '#3987e5',
+  fix: '#d95926',
+  refactor: '#199e70',
+  docs: '#c98500',
+  test: '#d55181',
+  chore: '#008300',
+  other: '#6b6385',
+};
+
 function words(w: Wrapped, t: Strings): string {
-  if (w.words.length === 0) return '';
-  const max = w.words[0].count;
+  const total = w.commits || 1;
+  const stack = w.commitTypes
+    .map((x) => `<i style="flex:${x.count};background:${TYPE_COLORS[x.type]}" title="${esc(t.types[x.type])} · ${esc(t.commitsN(x.count))}"></i>`)
+    .join('');
+  const legend = w.commitTypes
+    .map((x) => `<div class="row type"><span><i class="dot" style="background:${TYPE_COLORS[x.type]}"></i>${esc(t.types[x.type])}</span><em>${fmt(x.count)}</em><em>${pct(x.count / total)}%</em></div>`)
+    .join('');
+  const max = w.words[0]?.count || 1;
   const chips = w.words
-    .map((x) => `<span class="chip" style="font-size:${16 + Math.round((x.count / max) * 28)}px" title="${fmt(x.count)}">${esc(x.word)}</span>`)
+    .map((x) => `<span class="chip" style="font-size:${14 + Math.round((x.count / max) * 14)}px" title="${fmt(x.count)}">${esc(x.word)}</span>`)
     .join('');
   return `<div class="kicker" ${reveal(0)}>${esc(t.wordsTitle)}</div>
-<div class="chips" ${reveal(1)}>${chips}</div>
-<p class="sub" ${reveal(2)}>${esc(t.fixes(w.fixCommits, pct(w.fixCommits / w.commits)))}</p>
-<p class="sub" ${reveal(3)}>${esc(t.avgLen(w.avgMessageLength))}</p>`;
+<div class="split">
+<div class="viz" ${reveal(1)}>
+  <div class="viz-title">${esc(t.typesTitle)}</div>
+  <div class="stack">${stack}</div>
+  <div class="types">${legend}</div>
+</div>
+<div ${reveal(2)}>
+  ${chips ? `<div class="viz-title">${esc(t.wordsCloud)}</div><div class="chips">${chips}</div>` : ''}
+  <p class="sub">${esc(t.fixes(w.fixCommits, pct(w.fixCommits / w.commits)))}</p>
+  <p class="sub">${esc(t.avgLen(w.avgMessageLength))}</p>
+</div>
+</div>`;
 }
 
 /** Two pages: the headline number with your AI style, then where the tokens went. */
@@ -304,14 +330,21 @@ ${a.cacheRead > 0 ? `<p class="sub" ${reveal(3)}>${esc(t.aiCache(pct(a.cacheRead
 
 function persona(w: Wrapped, t: Strings): string {
   const [main, ...others] = w.personas.map((id) => t.personas[id]);
+  // A few numbers behind the verdict, so it reads as earned rather than assigned.
+  const stats: [string, string][] = [
+    [t.peakLabel, t.hour(w.peakHour)],
+    [t.streak, t.days(w.longestStreak.days)],
+  ];
+  if (w.languages[0]) stats.push([t.topLanguages, w.languages[0].name]);
   const badges = others.length
-    ? `<div class="badges" ${reveal(4)}><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
+    ? `<div class="badges" ${reveal(5)}><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
     : '';
   return `<div class="backdrop" aria-hidden="true"><div class="hero-emoji">${main.emoji}</div></div>
 <div class="kicker" ${reveal(0)}>${esc(t.personaIntro)}</div>
 <div class="emoji" ${reveal(1)}>${main.emoji}</div>
 <h1 ${reveal(2)}>${esc(main.name)}</h1>
 <p class="sub" ${reveal(3)}>${esc(main.desc(w))}</p>
+<div class="stats" ${reveal(4)}>${stats.map(([label, value]) => `<div><div class="label">${esc(label)}</div><div class="fact">${esc(value)}</div></div>`).join('')}</div>
 ${badges}`;
 }
 
@@ -319,16 +352,25 @@ function share(w: Wrapped, t: Strings, cards: Record<CardFormat, string>): strin
   const file = `commitale-${w.year}.svg`;
   const tabs = FORMATS.map((f) => `<button class="fmt${f === 'wide' ? ' on' : ''}" data-format="${f}" aria-pressed="${f === 'wide'}">${esc(t.formats[f])}</button>`).join('');
   const previews = FORMATS.map((f) => `<div class="card card-${f}" data-format="${f}"${f === 'wide' ? '' : ' hidden'}>${cards[f]}</div>`).join('');
-  return `<div class="kicker" ${reveal(0)}>${esc(t.shareTitle)}</div>
-<div class="formats" ${reveal(1)}>${tabs}</div>
-<div id="cards" ${reveal(1)}>${previews}</div>
-<div class="buttons" ${reveal(2)}>
-  <button data-action="png">${esc(t.downloadPng)}</button>
-  <button data-action="svg" class="ghost">${esc(t.downloadSvg)}</button>
-  <button data-action="copy" class="ghost">${esc(t.copyText)}</button>
+  // Head, card, actions: stacked on phones (card before the buttons), two columns on desktop.
+  return `<div class="summary">
+<div class="summary-head">
+  <div class="kicker" ${reveal(0)}>${esc(t.shareTitle)}</div>
+  <h2 ${reveal(1)}>${esc(t.summaryTitle(w.year))}</h2>
+  <p class="label" ${reveal(2)}>${esc(t.shareHint)}</p>
+  <div class="formats" ${reveal(2)}>${tabs}</div>
 </div>
-<p class="label" ${reveal(3)}>${esc(t.readmeHint)} <code>![commitale ${w.year}](./${file})</code></p>
-<p class="footer" ${reveal(4)}>${esc(t.footer)}</p>`;
+<div id="cards" ${reveal(1)}>${previews}</div>
+<div class="summary-actions">
+  <div class="buttons" ${reveal(3)}>
+    <button data-action="png">${esc(t.downloadPng)}</button>
+    <button data-action="svg" class="ghost">${esc(t.downloadSvg)}</button>
+    <button data-action="copy" class="ghost">${esc(t.copyText)}</button>
+  </div>
+  <p class="label readme" ${reveal(4)}>${esc(t.readmeHint)} <code>![commitale ${w.year}](./${file})</code></p>
+  <p class="footer" ${reveal(5)}>${esc(t.footer)}</p>
+</div>
+</div>`;
 }
 
 const CSS = `
@@ -428,9 +470,24 @@ blockquote::before{content:'“'}blockquote::after{content:'”'}
 .formats button{padding:8px 18px;font-size:14px;background:transparent;color:var(--muted)}
 .formats button.on{background:#fff;color:#1a1033}
 .card{margin:0 auto;width:100%}
-.card-wide{max-width:min(100%,82vh)}
-.card-square{max-width:min(100%,46vh)}
-.card-story{max-width:min(100%,26vh)}
+.card-wide{max-width:min(100%,100vh)}
+.card-square{max-width:min(100%,58vh)}
+.card-story{max-width:min(100%,33vh)}
+.summary{display:grid;grid-template-areas:"head" "cards" "actions";gap:20px}
+.summary-head{grid-area:head}#cards{grid-area:cards}.summary-actions{grid-area:actions}
+@media (min-width:960px){.summary{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);grid-template-areas:"head cards" "actions cards";column-gap:56px;row-gap:0;align-items:center}.summary-head{align-self:end}.summary-actions{align-self:start}}
+.summary h2{margin-bottom:8px}
+.summary-head .formats{margin:16px 0 0}
+.summary-actions .buttons{margin:16px 0 20px}
+.readme{font-size:13px}
+.stack{display:flex;gap:2px;height:22px;margin-bottom:18px}
+.stack i{min-width:3px;border-radius:4px;transform-origin:left}
+.in .stack i{animation:fill .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:.4s}
+.types{display:grid;gap:8px}
+.row.type{grid-template-columns:1fr auto 52px;font-size:15px}
+.stats{display:flex;flex-wrap:wrap;gap:16px 44px;margin-top:28px}
+.stats .label{margin:0 0 4px}
+.stats .fact{font-size:clamp(22px,3vw,32px)}
 .card svg{width:100%;height:auto;display:block;border-radius:clamp(10px,2vw,24px);box-shadow:0 30px 80px rgba(0,0,0,.45)}
 .buttons{display:flex;flex-wrap:wrap;gap:12px;margin:24px 0}
 button{font:inherit;font-weight:700;font-size:16px;padding:12px 22px;border-radius:999px;border:0;cursor:pointer;background:#fff;color:#1a1033}
@@ -478,7 +535,7 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0)*120ms)}
 .in .reveal{opacity:1;transform:none}
 @media (max-width:560px){.rows.wide .row{grid-template-columns:96px 1fr 44px;font-size:16px}.repos li{grid-template-columns:32px 1fr}.meta{grid-column:2;text-align:left}
-  .moments{grid-template-columns:1fr}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}}
+  .moments{grid-template-columns:1fr}.stats{gap:12px 24px;margin-top:18px}.summary-actions .buttons{margin:4px 0 12px}.summary-actions .footer{display:none}.chip{padding:4px 11px}.chips{gap:8px 10px;margin-bottom:12px}.row.type{font-size:14px}.types{gap:6px}.stack{margin-bottom:12px}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}}
 @media (prefers-reduced-motion:reduce){.slide,.slide.past{transform:none;transition:opacity .2s,visibility 0s}.reveal{opacity:1;transform:none;transition:none}
   .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.in .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}}
 `;
