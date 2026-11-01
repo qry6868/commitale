@@ -43,8 +43,8 @@ before(() => {
 });
 after(() => rmSync(dir, { recursive: true, force: true }));
 
-test('sums Claude Code usage once per message and Codex usage from running totals', () => {
-  const ai = readAiUsage({ year: 2026, cutoff: '2025-06-30', sources: sources() })!;
+test('sums Claude Code usage once per message and Codex usage from running totals', async () => {
+  const ai = (await readAiUsage({ year: 2026, cutoff: '2025-06-30', sources: sources() }))!;
   // Claude: two distinct 2026 messages of 1,160 tokens each. Codex: running total ends at 3,300.
   assert.equal(ai.tokens, 2 * 1160 + 3300);
   assert.deepEqual(ai.tools, [
@@ -59,14 +59,14 @@ test('sums Claude Code usage once per message and Codex usage from running total
   assert.equal(ai.byMonth[2], ai.tokens);
 });
 
-test('last year counts only up to the cutoff while this year is running', () => {
-  assert.deepEqual(readAiUsage({ year: 2026, cutoff: '2025-06-30', sources: sources() })!.previous, { year: 2025, tokens: 1160, partial: true });
-  assert.deepEqual(readAiUsage({ year: 2026, sources: sources() })!.previous, { year: 2025, tokens: 2320, partial: false });
+test('last year counts only up to the cutoff while this year is running', async () => {
+  assert.deepEqual((await readAiUsage({ year: 2026, cutoff: '2025-06-30', sources: sources() }))!.previous, { year: 2025, tokens: 1160, partial: true });
+  assert.deepEqual((await readAiUsage({ year: 2026, sources: sources() }))!.previous, { year: 2025, tokens: 2320, partial: false });
 });
 
-test('no logs, or none from that year, means no AI page', () => {
-  assert.equal(readAiUsage({ year: 2026, sources: { claude: [join(dir, 'missing')], codex: [] } }), undefined);
-  assert.equal(readAiUsage({ year: 2024, sources: sources() }), undefined);
+test('no logs, or none from that year, means no AI page', async () => {
+  assert.equal(await readAiUsage({ year: 2026, sources: { claude: [join(dir, 'missing')], codex: [] } }), undefined);
+  assert.equal(await readAiUsage({ year: 2024, sources: sources() }), undefined);
 });
 
 test('AI style comes from the year total tokens', () => {

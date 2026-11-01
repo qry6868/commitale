@@ -103,6 +103,9 @@ export interface Strings {
   scanning: (repos: number) => string;
   noRepos: (roots: string) => string;
   noReposAnywhere: string;
+  noGit: string;
+  scanTimeout: (root: string) => string;
+  repoTimeout: (names: string[]) => string;
   noCommits: (year: number, who: string) => string;
   foundAuthors: string;
   tryAuthor: string;
@@ -235,6 +238,9 @@ const en: Strings = {
     `Found ${names.length} ${names.length === 1 ? 'repository' : 'repositories'}: ${listNames(names, (more) => `and ${more} more`)}`,
   scanning: (n) => `Reading ${n} ${n === 1 ? 'repository' : 'repositories'}…`,
   noRepos: (roots) => `No git repositories found under ${roots}. Point Commitale at a folder with your projects, e.g. npx commitale ~/code`,
+  noGit: "Commitale needs git, but it isn't installed or isn't on your PATH. Install it from https://git-scm.com, then open a new terminal.",
+  scanTimeout: (root) => `Stopped scanning ${root} early because it was slow. Name a folder to scan it fully.`,
+  repoTimeout: (names) => `Skipped ${names.length} ${names.length === 1 ? 'repository' : 'repositories'} that took over 2 minutes to read: ${names.join(', ')}`,
   noReposAnywhere:
     'No git repositories found in your home folder or on your drives. Point Commitale at your projects folder, e.g. npx commitale D:\\projects',
   noCommits: (year, who) => `No commits by ${who} in ${year}.`,
@@ -396,6 +402,9 @@ const zh: Strings = {
   found: (names) => `找到 ${names.length} 个仓库：${listNames(names, (more) => `等 ${more} 个`)}`,
   scanning: (n) => `正在读取 ${n} 个仓库……`,
   noRepos: (roots) => `在 ${roots} 下没有找到 git 仓库。请指定存放项目的目录，例如 npx commitale ~/code`,
+  noGit: 'Commitale 需要 git，但没有检测到（可能没安装，或不在 PATH 里）。请从 https://git-scm.com 安装，然后重新打开终端。',
+  scanTimeout: (root) => `${root} 扫描太慢，已提前停止。可以直接指定文件夹来完整扫描。`,
+  repoTimeout: (names) => `有 ${names.length} 个仓库读取超过 2 分钟，已跳过：${names.join('、')}`,
   noReposAnywhere: '在你的用户目录和各个磁盘上都没有找到 git 仓库。请指定存放项目的目录，例如 npx commitale D:\\projects',
   noCommits: (year, who) => `${year} 年没有找到 ${who} 的提交。`,
   foundAuthors: '这些仓库里的作者：',

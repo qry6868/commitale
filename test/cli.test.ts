@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { after, before, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { createDemoAi, createDemoRepos, DEMO_AUTHOR } from '../scripts/demo.ts';
@@ -121,6 +121,13 @@ test('reads AI usage when Claude Code or Codex logs exist, and --no-ai skips it'
 
   const skipped = JSON.parse(runWith(env, process.cwd(), join(dir, 'repos'), '--year', '2025', '--author', DEMO_AUTHOR.email, '--json', '--no-ai').stdout);
   assert.equal(skipped.ai, undefined);
+});
+
+test('says so plainly when git is missing', () => {
+  // A PATH holding only Node's own folder: git can't be found.
+  const result = runWith({ PATH: dirname(process.execPath), Path: dirname(process.execPath) }, process.cwd(), join(dir, 'repos'), '--lang', 'en');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /needs git/);
 });
 
 test('--help and --version', () => {

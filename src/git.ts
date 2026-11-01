@@ -8,13 +8,26 @@ const execFileAsync = promisify(execFile);
 const RS = '\x1e';
 const US = '\x1f';
 
-export async function git(args: string[]): Promise<string> {
+/** Reading one repository may take this long before it is skipped (a kernel-sized clone, say). */
+export const REPO_TIMEOUT_MS = 120_000;
+
+export async function git(args: string[], timeout?: number): Promise<string> {
   const { stdout } = await execFileAsync('git', args, {
     encoding: 'utf8',
     maxBuffer: 1024 * 1024 * 1024,
     windowsHide: true,
+    timeout,
   });
   return stdout;
+}
+
+export async function hasGit(): Promise<boolean> {
+  try {
+    await git(['--version']);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Reads a git config value. Without `repo`, reads the global config. */
@@ -46,7 +59,7 @@ export async function readCommits(repo: string, year: number, fromYear = year): 
     `--since=${fromYear - 1}-12-25`,
     `--until=${year + 1}-01-07`,
     `--pretty=format:${RS}%H${US}%an${US}%ae${US}%aI${US}%s`,
-  ]);
+  ], REPO_TIMEOUT_MS);
   return parseLog(out, repo).filter((c) => {
     const y = Number(c.date.slice(0, 4));
     return y >= fromYear && y <= year;

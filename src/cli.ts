@@ -5,7 +5,7 @@ import { homedir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { aiStyle, hasAiSources, readAiUsage } from './ai.ts';
-import { gitConfig, readCommits, repoRoot } from './git.ts';
+import { gitConfig, hasGit, readCommits, repoRoot } from './git.ts';
 import { detectLang, strings, type Lang, type Strings } from './i18n.ts';
 import { renderCard } from './render/card.ts';
 import { renderHtml } from './render/html.ts';
@@ -88,11 +88,12 @@ async function main(): Promise<number> {
   if (!Number.isInteger(depth) || depth < 0) return fail(`Invalid --depth: ${values.depth}`);
   const lang: Lang = values.lang === 'zh' || values.lang === 'en' ? values.lang : detectLang();
   const t = strings(lang);
+  if (!(await hasGit())) return fail(t.noGit);
 
   let repos: string[];
   if (positionals.length > 0) {
     const roots = positionals.map(expandHome);
-    repos = findRepos(roots, depth);
+    repos = await findRepos(roots, depth);
     if (repos.length === 0) {
       // Run from inside a repo's subfolder: use the repo it belongs to.
       const tops = await Promise.all(roots.map(repoRoot));
@@ -104,11 +105,22 @@ async function main(): Promise<number> {
     if (repos.length === 0) return fail(t.noReposAnywhere);
   }
 
-  process.stderr.write(`${t.scanning(repos.length)}\n`);
+  const reading = progressLine(t.scanning(repos.length), repos.length);
+  const slow: string[] = [];
   const seen = new Set<string>();
   const all: Commit[] = [];
   // Last year too, for the year-over-year comparison.
-  for (const commits of await mapLimit(repos, 8, (repo) => readCommits(repo, year, year - 1).catch(() => []))) {
+  const perRepo = await mapLimit(repos, 8, (repo) =>
+    readCommits(repo, year, year - 1)
+      .catch((error: { killed?: boolean }) => {
+        if (error?.killed) slow.push(basename(repo));
+        return [];
+      })
+      .finally(reading.tick),
+  );
+  reading.end();
+  if (slow.length > 0) process.stderr.write(`${t.repoTimeout(slow)}\n`);
+  for (const commits of perRepo) {
     for (const c of commits) {
       // The same commit shows up in forks and clones; count it once.
       if (seen.has(c.hash)) continue;
@@ -169,8 +181,16 @@ async function main(): Promise<number> {
   }
 
   if (!values['no-ai'] && hasAiSources()) {
-    process.stderr.write(`${t.readingAi}\n`);
-    wrapped.ai = readAiUsage({ year, cutoff: partial ? cutoff : undefined });
+    let line: ReturnType<typeof progressLine> | undefined;
+    wrapped.ai = await readAiUsage({
+      year,
+      cutoff: partial ? cutoff : undefined,
+      progress: (total) => {
+        line ??= progressLine(t.readingAi, total);
+        line.tick();
+      },
+    });
+    line?.end();
     if (wrapped.ai) wrapped.ai.style = aiStyle(wrapped);
   }
 
@@ -207,15 +227,41 @@ async function findDefaultRepos(depth: number, t: Strings): Promise<string[]> {
   // A home folder kept under git (dotfiles) shouldn't hide every other project.
   if (top && !samePath(top, homedir())) return findRepos([top], depth);
   if (!samePath('.', homedir())) {
-    const here = findRepos(['.'], depth);
+    const here = await findRepos(['.'], depth);
     if (here.length > 0) return here;
   }
 
-  const roots = searchRoots();
+  const roots = await searchRoots();
   process.stderr.write(`${t.searching(roots.join(', '))}\n`);
-  const repos = findRepos(roots, depth);
+  const repos = await findRepos(roots, depth, {
+    timeLimitMs: 20_000,
+    onTimeout: (root) => process.stderr.write(`${t.scanTimeout(root)}\n`),
+  });
   if (repos.length > 0) process.stderr.write(`${t.found(repos.map((r) => basename(r)))}\n`);
   return repos;
+}
+
+/**
+ * "Reading 13 repositories… 7/13", redrawn in place in a terminal; when output is
+ * piped, just the label, once.
+ */
+function progressLine(label: string, total: number): { tick: () => void; end: () => void } {
+  const tty = Boolean(process.stderr.isTTY);
+  let done = 0;
+  const draw = (): void => {
+    if (tty) process.stderr.write(`\r${label} ${done}/${total}`);
+  };
+  if (!tty) process.stderr.write(`${label}\n`);
+  draw();
+  return {
+    tick: () => {
+      done++;
+      draw();
+    },
+    end: () => {
+      if (tty) process.stderr.write('\n');
+    },
+  };
 }
 
 function fail(message: string): number {

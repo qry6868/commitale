@@ -1,6 +1,7 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { createReadStream, existsSync, readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { createInterface } from 'node:readline';
 import type { Wrapped } from './stats.ts';
 
 /**
@@ -58,15 +59,26 @@ export interface AiOptions {
   /** Compare with last year only up to this date (YYYY-MM-DD) while `year` is still running. */
   cutoff?: string;
   sources?: AiSources;
+  /** Called after each log file, with the number of files to read in all. */
+  progress?: (total: number) => void;
 }
 
-export function readAiUsage({ year, cutoff, sources = defaultAiSources() }: AiOptions): AiStats | undefined {
+export async function readAiUsage({ year, cutoff, sources = defaultAiSources(), progress }: AiOptions): Promise<AiStats | undefined> {
   // Logs untouched since before last year can't hold anything we count.
   const since = new Date(year - 1, 0, 1).getTime();
+  const claude = sources.claude.flatMap((dir) => [...jsonlFiles(dir, since)]);
+  const codex = sources.codex.flatMap((dir) => [...jsonlFiles(dir, since)]);
+  const fileCount = claude.length + codex.length;
   const usage: Usage[] = [];
   const seen = new Set<string>();
-  for (const dir of sources.claude) for (const file of jsonlFiles(dir, since)) readClaude(file, usage, seen);
-  for (const dir of sources.codex) for (const file of jsonlFiles(dir, since)) readCodex(file, usage);
+  for (const file of claude) {
+    await readClaude(file, usage, seen);
+    progress?.(fileCount);
+  }
+  for (const file of codex) {
+    await readCodex(file, usage);
+    progress?.(fileCount);
+  }
 
   const current = usage.filter((u) => u.date.startsWith(`${year}-`));
   if (current.length === 0) return undefined;
@@ -100,8 +112,8 @@ export function aiStyle(w: Wrapped): AiStyleId | undefined {
  * Claude Code: one JSON object per line; assistant messages carry `message.usage`.
  * A streamed reply can be logged more than once, so each message id counts once.
  */
-function readClaude(file: string, out: Usage[], seen: Set<string>): void {
-  for (const line of lines(file)) {
+async function readClaude(file: string, out: Usage[], seen: Set<string>): Promise<void> {
+  for await (const line of lines(file)) {
     if (!line.includes('"usage"')) continue;
     const o = parse(line);
     const usage = o?.message?.usage;
@@ -128,10 +140,10 @@ function readClaude(file: string, out: Usage[], seen: Set<string>): void {
  * Codex: `token_count` events carry the session's running total, so each event
  * contributes what it added since the one before.
  */
-function readCodex(file: string, out: Usage[]): void {
+async function readCodex(file: string, out: Usage[]): Promise<void> {
   let model = 'unknown';
   let prev = { input: 0, cached: 0, output: 0, total: 0 };
-  for (const line of lines(file)) {
+  for await (const line of lines(file)) {
     if (!line.includes('token_count') && !line.includes('"model"')) continue;
     const o = parse(line);
     const p = o?.payload;
@@ -215,11 +227,20 @@ function* jsonlFiles(dir: string, since: number, depth = 0): Generator<string> {
   }
 }
 
-function lines(file: string): string[] {
+/**
+ * A log's lines, streamed: heavy users' session logs can run to hundreds of MB, past
+ * the largest string Node can hold, so reading a file whole would silently drop it.
+ */
+async function* lines(file: string): AsyncGenerator<string> {
+  const stream = createReadStream(file, { encoding: 'utf8' });
+  const reader = createInterface({ input: stream, crlfDelay: Infinity });
   try {
-    return readFileSync(file, 'utf8').split('\n');
+    for await (const line of reader) yield line;
   } catch {
-    return [];
+    // Vanished or unreadable mid-way: keep what was read.
+  } finally {
+    reader.close();
+    stream.destroy();
   }
 }
 
