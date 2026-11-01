@@ -193,7 +193,7 @@ const en: Strings = {
       `a ${w.longestStreak.days}-day streak. I'm ${p.emoji} ${p.name}. Get yours: npx commitale`;
   },
 
-  cardTitle: (year) => `My ${year} in code`,
+  cardTitle: (year) => `My ${year} coding recap`,
   cardCommits: 'commits',
   cardAdded: 'lines added',
   cardDays: 'active days',
@@ -218,7 +218,7 @@ const en: Strings = {
   aiBreakdownTitle: 'Where the tokens went',
   music: 'Music',
   typesTitle: 'What you committed',
-  iAm: "As a coder, I'm",
+  iAm: "When coding, I'm",
   topRepos: 'Top repos',
   cardTypes: 'What I shipped',
   myAiStyle: 'My AI style',
@@ -363,11 +363,11 @@ const zh: Strings = {
       `最长连续 ${w.longestStreak.days} 天。我是 ${p.emoji} ${p.name}！生成你的：npx commitale`;
   },
 
-  cardTitle: (year) => `我的 ${year} 编程年度报告`,
-  cardCommits: '次代码提交',
+  cardTitle: (year) => `我的 ${year} Coding 年度报告`,
+  cardCommits: '次提交',
   cardAdded: '行新增代码',
   cardDays: '天活跃',
-  cardStreak: '天连续写代码',
+  cardStreak: '天连续 Coding',
   cardVs: (p, y, partial) => (partial ? `同比 ${signed(p)}` : `较 ${y} 年 ${signed(p)}`),
   vsYear: (p, y, partial) => `比${partial ? '去年同期' : ` ${y} 年`}${p >= 0 ? '多' : '少'} ${Math.abs(p)}%`,
   lastYearStreak: (n, partial) => `${partial ? '去年同期' : '去年'}：${fmt(n)} 天`,
@@ -381,14 +381,14 @@ const zh: Strings = {
   aiBusiest: (date, tokens) => `用 AI 最多的一天是 ${date}，消耗了 ${tokens} token。`,
   aiPerCommit: (tokens) => `平均每次提交消耗约 ${tokens} token。`,
   aiNote: '包含缓存 token。只在你的电脑上读取用量数字，不读取你的提示词和代码。',
-  cardTokens: 'AI 编程 token',
+  cardTokens: 'AI Coding token',
   readingAi: '正在读取 Claude Code 和 Codex 记录中的用量数字……',
   terminalAi: 'AI 用量',
   aiStyleIntro: '你的 AI 搭档类型',
   aiBreakdownTitle: 'token 都花在了哪里',
   music: '音乐',
   typesTitle: '你都提交了什么',
-  iAm: '写代码时，我是',
+  iAm: 'Coding 时，我是',
   topRepos: '最常提交的仓库',
   cardTypes: '我都提交了什么',
   myAiStyle: '我的 AI 搭档类型',
@@ -427,7 +427,7 @@ const zh: Strings = {
   youAre: '你是',
   report: '报告',
   card: '分享卡片',
-  topLanguages: '常用编程语言',
+  topLanguages: '常用语言',
 
   personas: {
     nightOwl: {

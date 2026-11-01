@@ -13,7 +13,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 
 English · [简体中文](docs/README.zh-CN.md)
 
-<img src="assets/demo-poster.svg" alt="A Commitale poster card, My 2026 in code: as a coder, I'm The Night Owl, AI style The Pair Programmer, 653 commits, 674M AI tokens, a 41-day streak." width="760">
+<img src="assets/demo-poster.svg" alt="A Commitale poster card, My 2026 coding recap: when coding, I'm The Night Owl, AI style The Pair Programmer, 653 commits, 674M AI tokens, a 41-day streak." width="760">
 
 </div>
 
