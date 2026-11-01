@@ -49,9 +49,10 @@ const LAYOUTS: Record<CardFormat, Layout> = {
     name: [230, 30],
     persona: { x: 72, y: 268, w: 936, h: 128, emoji: 64, label: 18, name: 36 },
     tiles: { y: 428, cols: 2, w: 456, h: 148, gap: 24, num: 64, label: 22, delta: 18 },
-    heat: { y: 790, step: 17 },
-    langs: { mode: 'inline', x: 72, y: 940, w: 936, rows: 3, size: 22 },
-    footer: [1040, 22],
+    heat: { y: 800, step: 17 },
+    langs: { mode: 'inline', x: 72, y: 960, w: 936, rows: 3, size: 22 },
+    // Top right, beside the kicker: the bottom of a square is full.
+    footer: [110, 20],
   },
   story: {
     pad: 88,
@@ -137,7 +138,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   ${tiles}
   ${heat}
   ${languages(w, t, L, theme.accent, format)}
-  <text x="${L.pad}" y="${L.footer[0]}" font-size="${L.footer[1]}" fill="#fff" fill-opacity="0.55" font-family="${MONO}">$ npx commitale</text>
+  <text x="${format === 'square' ? W - L.pad : L.pad}" y="${L.footer[0]}" font-size="${L.footer[1]}" fill="#fff" fill-opacity="0.55" font-family="${MONO}"${format === 'square' ? ' text-anchor="end"' : ''}>$ npx commitale</text>
 </svg>
 `;
 }

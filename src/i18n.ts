@@ -81,6 +81,13 @@ export interface Strings {
   readingAi: string;
   terminalAi: string;
   aiStyleIntro: string;
+  aiBreakdownTitle: string;
+  monthsTitle: string;
+  weekdaysTitle: string;
+  linesMix: string;
+  net: (n: number) => string;
+  less: string;
+  more: string;
   aiCache: (pct: number) => string;
   aiStyles: Record<AiStyleId, { emoji: string; name: string; short: string; desc: string }>;
 
@@ -193,6 +200,13 @@ const en: Strings = {
   readingAi: 'Reading AI usage counts from Claude Code and Codex logs…',
   terminalAi: 'AI usage',
   aiStyleIntro: 'Your AI style',
+  aiBreakdownTitle: 'Where the tokens went',
+  monthsTitle: 'Commits by month',
+  weekdaysTitle: 'By weekday',
+  linesMix: 'Added vs deleted',
+  net: (n) => `Net ${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))} lines`,
+  less: 'Less',
+  more: 'More',
   aiCache: (p) => `${p}% of them were cache reads: the AI re-reading your conversation on every step, which is why the number is so big.`,
   aiStyles: {
     spotChecker: { emoji: '🔍', name: 'The Spot Checker', short: 'Spot Checker', desc: 'You ask AI the odd question and write most of the code yourself.' },
@@ -341,6 +355,13 @@ const zh: Strings = {
   readingAi: '正在读取 Claude Code 和 Codex 记录中的用量数字……',
   terminalAi: 'AI 用量',
   aiStyleIntro: '你的 AI 搭档类型',
+  aiBreakdownTitle: 'token 都花在了哪里',
+  monthsTitle: '每月提交',
+  weekdaysTitle: '按星期',
+  linesMix: '新增与删除',
+  net: (n) => `净${n >= 0 ? '增' : '减'} ${fmt(Math.abs(n))} 行`,
+  less: '少',
+  more: '多',
   aiCache: (p) => `其中 ${p}% 是缓存读取：AI 每走一步都要重读一遍你们的对话，所以数字才这么大。`,
   aiStyles: {
     spotChecker: { emoji: '🔍', name: '点到为止', short: '点到为止', desc: 'AI 偶尔问一问，代码主要自己写。' },
