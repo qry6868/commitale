@@ -85,11 +85,11 @@ function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' |
   const [W, H] = CARD_SIZES[format];
   const pad = story ? 72 : 64;
   const s = story
-    ? { head: 34, waveY: 136, waveH: 300, label: 30, nameMax: 190, nameMin: 110, sticker: 150, aiLabel: 24, aiName: 64, listTitle: 26, rank: 46, item: 34, row: 66, maxRows: 5, stat: 92, statLabel: 22, statCols: 4, foot: 26 }
-    : { head: 28, waveY: 108, waveH: 150, label: 24, nameMax: 140, nameMin: 80, sticker: 104, aiLabel: 20, aiName: 46, listTitle: 20, rank: 34, item: 26, row: 46, maxRows: 3, stat: 66, statLabel: 18, statCols: 3, foot: 20 };
+    ? { head: 46, waveY: 140, waveH: 300, label: 30, nameMax: 190, nameMin: 110, sticker: 150, aiLabel: 24, aiName: 64, listTitle: 26, rank: 46, item: 34, row: 66, maxRows: 5, stat: 92, statLabel: 22, statCols: 4, foot: 26 }
+    : { head: 34, waveY: 110, waveH: 150, label: 24, nameMax: 140, nameMin: 80, sticker: 104, aiLabel: 20, aiName: 46, listTitle: 20, rank: 34, item: 26, row: 46, maxRows: 3, stat: 66, statLabel: 18, statCols: 3, foot: 20 };
   const out: string[] = [];
 
-  out.push(header(w, c, pad, story ? 92 : 76, s.head, W));
+  out.push(header(w, t, c, pad, story ? 92 : 76, s.head, W));
   out.push(waveform(w, c.theme, id, 0, s.waveY, W, s.waveH));
 
   // The verdict: a full-bleed flat block in the personality's colour.
@@ -132,7 +132,8 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   const dark = c.theme.bg[0];
 
   out.push(`<rect width="${panelW}" height="${H}" fill="${c.theme.accent}"/>`);
-  out.push(`<text x="${pad}" y="70" font-size="22" font-family="${headline()}" letter-spacing="2" fill="${dark}">COMMITALE · ${w.year}</text>`);
+  // Say outright what this is: a stranger scrolling past should see "a year of code" first.
+  out.push(`<text x="${pad}" y="76" font-size="32" font-family="${headline()}" font-weight="800" letter-spacing="1" fill="${dark}">${esc(upper(t.cardTitle(w.year)))}</text>`);
   out.push(`<text x="${pad}" y="150" font-size="22" font-weight="800" letter-spacing="3" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.iAm))}</text>`);
   const fit = fitName(c.name, 116, 60, panelW - pad * 2);
   let y = 150 + 18;
@@ -146,7 +147,8 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
     y += 44;
     out.push(`<text x="${pad}" y="${y}" font-size="38" fill="${dark}">${c.ai.emoji}<tspan dx="8" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
   }
-  out.push(sticker(c.emoji, panelW - 70, 92, 84, id));
+  // Bottom corner: the title runs along the top, and the name and AI style fill the middle.
+  out.push(sticker(c.emoji, panelW - 80, H - 80, 84, id));
 
   const x0 = panelW + 44;
   const areaW = W - x0 - 48;
@@ -159,8 +161,8 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   return out.join('\n    ');
 }
 
-function header(w: Wrapped, c: Content, pad: number, y: number, size: number, W: number): string {
-  return `<text x="${pad}" y="${y}" font-size="${size}" font-family="${headline()}" letter-spacing="${size / 12}" fill="${c.theme.accent}">COMMITALE · ${w.year}</text>
+function header(w: Wrapped, t: Strings, c: Content, pad: number, y: number, size: number, W: number): string {
+  return `<text x="${pad}" y="${y}" font-size="${size}" font-family="${headline()}" font-weight="800" letter-spacing="${size / 24}" fill="${c.theme.accent}">${esc(upper(t.cardTitle(w.year)))}</text>
     <text x="${W - pad}" y="${y}" font-size="${Math.round(size * 0.78)}" text-anchor="end" fill="#fff" fill-opacity="0.72">${esc(w.name)}</text>`;
 }
 

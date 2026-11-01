@@ -52,6 +52,8 @@ for (const lang of ['en', 'zh'] as const) {
         const posters = Object.fromEntries(FORMATS.map((f) => [f, renderPoster(w, t, f)])) as Record<CardFormat, string>;
         for (const f of FORMATS) {
           assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>|secret-plans/, `${persona} poster ${f}`);
+          // Someone scrolling past should see at once that this is about code.
+          assert.ok(posters[f].toLowerCase().includes(t.cardTitle(2026).toLowerCase()), `${persona} poster ${f} says what it is`);
           // A square poster drops its lists when a two-line name leaves no room.
           if (f !== 'square') assert.ok(posters[f].includes(t.types.fix), `${persona} poster ${f} lists commit types`);
           assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');
