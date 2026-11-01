@@ -85,6 +85,7 @@ export interface Strings {
   music: string;
   typesTitle: string;
   iAm: string;
+  topRepos: string;
   myAiStyle: string;
   styles: { poster: string; data: string };
   types: Record<CommitType, string>;
@@ -217,6 +218,7 @@ const en: Strings = {
   music: 'Music',
   typesTitle: 'What you committed',
   iAm: "I'm",
+  topRepos: 'Top repos',
   myAiStyle: 'My AI style',
   styles: { poster: 'Poster', data: 'Stats' },
   types: { feature: 'Features', fix: 'Fixes', refactor: 'Refactors', docs: 'Docs', test: 'Tests', chore: 'Chores', other: 'Other' },
@@ -385,6 +387,7 @@ const zh: Strings = {
   music: '音乐',
   typesTitle: '你都提交了什么',
   iAm: '我是',
+  topRepos: '最常提交的仓库',
   myAiStyle: '我的 AI 搭档类型',
   styles: { poster: '海报', data: '数据' },
   types: { feature: '新功能', fix: '修 bug', refactor: '重构', docs: '文档', test: '测试', chore: '杂项', other: '其他' },

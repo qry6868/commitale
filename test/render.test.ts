@@ -52,7 +52,8 @@ for (const lang of ['en', 'zh'] as const) {
         for (const f of FORMATS) {
           assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>/, `${persona} poster ${f}`);
           assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');
-          assert.ok(posters[f].includes(t.personas[persona].name.split(' ').pop()!), `${persona} poster names the personality`);
+          // Names are uppercased for the headline face, and CJK names must stay on one line.
+          assert.ok(posters[f].toLowerCase().includes(t.personas[persona].name.split(' ').pop()!.toLowerCase()), `${persona} poster names the personality`);
         }
         const html = renderHtml(w, t, { poster: posters, data: cards });
         assert.doesNotMatch(html, /NaN|undefined/, persona);

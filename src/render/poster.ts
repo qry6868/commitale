@@ -3,158 +3,275 @@ import { compact, escapeXml as esc, fmt } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import type { Wrapped } from '../stats.ts';
 import { CARD_SIZES, DISPLAY, FONT, type CardFormat, type CardOptions } from './card.ts';
-import { FONT_FACE } from './font.ts';
-import { themeFor } from './theme.ts';
+import { FONT_FACE, HEADLINE_FAMILY } from './font.ts';
+import { themeFor, type Theme } from './theme.ts';
 
 const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+const CJK = /[⺀-鿿가-힯＀-￯]/;
+const headline = (): string => `'${HEADLINE_FAMILY}', ${DISPLAY()}`;
 
-interface PosterLayout {
-  pad: number;
-  kicker: [y: number, size: number];
-  user: [y: number, size: number];
-  orb: { cx: number; cy: number; r: number; emoji: number };
-  /** The personality block: label baseline, then the name, shrunk to fit `width` in two lines. */
-  verdict: { y: number; label: number; width: number; max: number; min: number };
-  pill: { size: number; h: number; gap: number };
-  stats: { y: number; size: number; label: number; col: number };
-  footer: { y: number; size: number; right: boolean };
+/** Everything a poster shows, worked out once and laid out per size. */
+interface Content {
+  theme: Theme;
+  name: string;
+  emoji: string;
+  ai?: { emoji: string; name: string };
+  repos: string[];
+  languages: string[];
+  stats: [value: string, label: string][];
 }
 
-const LAYOUTS: Record<CardFormat, PosterLayout> = {
-  wide: {
-    pad: 72,
-    kicker: [92, 16],
-    user: [124, 22],
-    orb: { cx: 930, cy: 300, r: 210, emoji: 210 },
-    verdict: { y: 200, label: 22, width: 600, max: 84, min: 52 },
-    pill: { size: 20, h: 48, gap: 30 },
-    stats: { y: 534, size: 56, label: 17, col: 210 },
-    footer: { y: 592, size: 18, right: true },
-  },
-  square: {
-    pad: 72,
-    kicker: [110, 20],
-    user: [148, 26],
-    orb: { cx: 770, cy: 330, r: 220, emoji: 230 },
-    verdict: { y: 560, label: 26, width: 936, max: 96, min: 60 },
-    pill: { size: 24, h: 58, gap: 36 },
-    stats: { y: 940, size: 72, label: 22, col: 310 },
-    footer: { y: 1032, size: 20, right: false },
-  },
-  story: {
-    pad: 88,
-    kicker: [200, 24],
-    user: [246, 32],
-    orb: { cx: 540, cy: 660, r: 290, emoji: 310 },
-    verdict: { y: 1080, label: 32, width: 904, max: 128, min: 72 },
-    pill: { size: 30, h: 72, gap: 48 },
-    stats: { y: 1660, size: 96, label: 28, col: 300 },
-    footer: { y: 1830, size: 30, right: false },
-  },
-};
-
 /**
- * The poster card: one big verdict instead of a dashboard. The personality fills the
- * frame, the AI style rides beside it as a tag, and three numbers back it up.
+ * The poster card, after the share cards people actually post: one huge verdict on a
+ * flat colour block, the year drawn as art from the user's own commits, Top 5 lists
+ * of the things that make it theirs, and a row of headline numbers.
  */
 export function renderPoster(w: Wrapped, t: Strings, format: CardFormat = 'wide', options: CardOptions = {}): string {
-  const L = LAYOUTS[format];
   const [W, H] = CARD_SIZES[format];
   const theme = themeFor(w);
   const persona = t.personas[w.personas[0]];
-  const id = `poster-${format}`;
-  const display = DISPLAY();
-
-  const { size: nameSize, lines } = fit(persona.name, L.verdict.max, L.verdict.min, L.verdict.width);
-  const firstLine = L.verdict.y + Math.round(nameSize * 1.05);
-  const name = lines
-    .map((line, i) => `<text x="${L.pad}" y="${firstLine + Math.round(i * nameSize * 1.02)}" font-size="${nameSize}" font-weight="700" font-family="${display}" letter-spacing="${-nameSize / 40}" fill="#fff">${esc(line)}</text>`)
-    .join('\n  ');
-  const lastLine = firstLine + Math.round((lines.length - 1) * nameSize * 1.02);
-
   const styleId = aiStyle(w);
-  let pill = '';
-  if (styleId) {
-    const s = t.aiStyles[styleId];
-    const label = `${t.myAiStyle} · ${s.name}`;
-    const P = L.pill;
-    const top = lastLine + P.gap;
-    const padX = Math.round(P.h * 0.45);
-    const emojiW = Math.round(P.size * 1.6);
-    const width = padX * 2 + emojiW + textWidth(label, P.size);
-    pill = `<rect x="${L.pad}" y="${top}" width="${width}" height="${P.h}" rx="${P.h / 2}" fill="#fff" fill-opacity="0.12"/>
-  <text x="${L.pad + padX}" y="${top + Math.round(P.h / 2 + P.size * 0.36)}" font-size="${P.size}">${s.emoji}</text>
-  <text x="${L.pad + padX + emojiW}" y="${top + Math.round(P.h / 2 + P.size * 0.36)}" font-size="${P.size}" font-weight="600" fill="#fff">${esc(label)}</text>`;
-  }
+  const latest = w.latestNight ? [w.latestNight.time, t.latest] : [t.hour(w.peakHour), t.peakLabel];
+  const c: Content = {
+    theme,
+    name: CJK.test(persona.name) ? persona.name : persona.name.toUpperCase(),
+    emoji: persona.emoji,
+    ai: styleId ? { emoji: t.aiStyles[styleId].emoji, name: t.aiStyles[styleId].name } : undefined,
+    repos: w.topRepos.map((r) => r.name).slice(0, 5),
+    languages: w.languages.map((l) => l.name).slice(0, 5),
+    stats: [
+      [w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), t.cardCommits],
+      w.ai ? [t.tokens(w.ai.tokens), t.cardTokens] : [compact(w.added), t.cardAdded],
+      [fmt(w.longestStreak.days), t.cardStreak],
+      latest as [string, string],
+    ],
+  };
+  const id = `poster-${format}`;
+  const body = format === 'wide' ? wide(w, t, c, id) : tall(w, t, c, id, format);
 
-  const stats: [string, string][] = [
-    [w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), t.cardCommits],
-    w.ai ? [t.tokens(w.ai.tokens), t.cardTokens] : [compact(w.added), t.cardAdded],
-    [fmt(w.longestStreak.days), t.cardStreak],
-  ];
-  const S = L.stats;
-  const statText = stats
-    .map(([value, label], i) => {
-      const x = L.pad + i * S.col;
-      return `<text x="${x}" y="${S.y}" font-size="${S.size}" font-weight="700" font-family="${display}" fill="#fff">${esc(value)}</text>
-  <text x="${x}" y="${S.y + Math.round(S.label * 1.7)}" font-size="${S.label}" fill="#fff" fill-opacity="0.66">${esc(label)}</text>`;
-    })
-    .join('\n  ');
-
-  const O = L.orb;
-  const F = L.footer;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${FONT}">
   <defs>${options.embedFont ? `<style>${FONT_FACE}</style>` : ''}
     <linearGradient id="${id}-bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${theme.bg[0]}"/>
-      <stop offset="0.55" stop-color="${theme.bg[1]}"/>
-      <stop offset="1" stop-color="${theme.bg[2]}"/>
+      <stop offset="1" stop-color="${theme.bg[1]}"/>
     </linearGradient>
-    <radialGradient id="${id}-orb" cx="0.35" cy="0.3" r="0.8">
-      <stop offset="0" stop-color="${theme.heat[4]}" stop-opacity="0.95"/>
-      <stop offset="0.45" stop-color="${theme.glow[0]}" stop-opacity="0.85"/>
-      <stop offset="1" stop-color="${theme.glow[1]}" stop-opacity="0.55"/>
-    </radialGradient>
-    <filter id="${id}-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${Math.round(W / 14)}"/></filter>
+    <filter id="${id}-shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.35"/></filter>
     <clipPath id="${id}-frame"><rect width="${W}" height="${H}" rx="28"/></clipPath>
   </defs>
   <g clip-path="url(#${id}-frame)">
     <rect width="${W}" height="${H}" fill="url(#${id}-bg)"/>
-    <circle cx="${O.cx}" cy="${O.cy}" r="${Math.round(O.r * 1.25)}" fill="${theme.glow[0]}" fill-opacity="0.35" filter="url(#${id}-glow)"/>
-    <circle cx="80" cy="${H + 10}" r="${Math.round(W * 0.2)}" fill="${theme.glow[1]}" fill-opacity="0.3" filter="url(#${id}-glow)"/>
-    <circle cx="${O.cx}" cy="${O.cy}" r="${O.r + 64}" fill="none" stroke="#fff" stroke-opacity="0.06" stroke-width="2"/>
-    <circle cx="${O.cx}" cy="${O.cy}" r="${O.r + 26}" fill="none" stroke="#fff" stroke-opacity="0.14" stroke-width="2"/>
-    <circle cx="${O.cx}" cy="${O.cy}" r="${O.r}" fill="url(#${id}-orb)"/>
+    ${body}
   </g>
-  <text x="${O.cx}" y="${O.cy + Math.round(O.emoji * 0.35)}" font-size="${O.emoji}" text-anchor="middle">${persona.emoji}</text>
-  <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
-  <text x="${L.pad}" y="${L.user[0]}" font-size="${L.user[1]}" fill="#fff" fill-opacity="0.72">${esc(w.name)}</text>
-  <text x="${L.pad}" y="${L.verdict.y}" font-size="${L.verdict.label}" font-weight="700" letter-spacing="${L.verdict.label / 8}" fill="${theme.accent}">${esc(t.iAm.toUpperCase())}</text>
-  ${name}
-  ${pill}
-  ${statText}
-  <text x="${F.right ? W - L.pad : L.pad}" y="${F.y}" font-size="${F.size}" fill="#fff" fill-opacity="0.55" font-family="${MONO}"${F.right ? ' text-anchor="end"' : ''}>$ npx commitale</text>
 </svg>
 `;
 }
 
-/** The largest size, stepping down, at which `text` fits `width` in at most two lines. */
-function fit(text: string, max: number, min: number, width: number): { size: number; lines: string[] } {
-  for (let size = max; size > min; size -= 4) {
+/** Story and square: one column, flowing top to bottom; lists take whatever room is left. */
+function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' | 'story'): string {
+  const story = format === 'story';
+  const [W, H] = CARD_SIZES[format];
+  const pad = story ? 72 : 64;
+  const s = story
+    ? { head: 34, waveY: 136, waveH: 300, label: 30, nameMax: 190, nameMin: 110, sticker: 150, aiLabel: 24, aiName: 64, listTitle: 26, rank: 46, item: 34, row: 66, maxRows: 5, stat: 92, statLabel: 22, statCols: 4, foot: 26 }
+    : { head: 28, waveY: 108, waveH: 150, label: 24, nameMax: 140, nameMin: 80, sticker: 104, aiLabel: 20, aiName: 46, listTitle: 20, rank: 34, item: 26, row: 46, maxRows: 3, stat: 66, statLabel: 18, statCols: 3, foot: 20 };
+  const out: string[] = [];
+
+  out.push(header(w, c, pad, story ? 92 : 76, s.head, W));
+  out.push(waveform(w, c.theme, id, 0, s.waveY, W, s.waveH));
+
+  // The verdict: a full-bleed flat block in the personality's colour.
+  const panelY = s.waveY + s.waveH + (story ? 36 : 24);
+  const panel = verdictPanel(c, t, { x: 0, y: panelY, width: W, pad, label: s.label, max: s.nameMax, min: s.nameMin, sticker: s.sticker, id });
+  out.push(panel.svg);
+  let y = panelY + panel.height;
+
+  if (c.ai) {
+    y += story ? 66 : 46;
+    out.push(`<text x="${pad}" y="${y}" font-size="${s.aiLabel}" font-weight="700" letter-spacing="${s.aiLabel / 8}" fill="${c.theme.accent}">${esc(t.myAiStyle.toUpperCase())}</text>`);
+    y += Math.round(s.aiName * 1.05);
+    out.push(`<text x="${pad}" y="${y}" font-size="${s.aiName}" fill="#fff">${c.ai.emoji}<tspan dx="${Math.round(s.aiName * 0.25)}" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
+  }
+
+  // Stats and footer are pinned to the bottom; the lists get the space in between.
+  const footY = H - (story ? 64 : 44);
+  const statY = footY - (story ? 120 : 78);
+  const listTop = y + (story ? 84 : 58);
+  const roomForRows = statY - s.stat - (story ? 70 : 44) - (listTop + s.listTitle + 18);
+  const rows = Math.min(s.maxRows, Math.floor(roomForRows / s.row));
+  if (rows >= 2) {
+    const lists = [[t.topRepos, c.repos], [t.topLanguages, c.languages]].filter(([, items]) => items.length > 0) as [string, string[]][];
+    const colW = (W - pad * 2 - 40) / lists.length;
+    lists.forEach(([title, items], i) =>
+      out.push(topList(title, items.slice(0, rows), pad + i * (colW + 40), listTop, colW, s, c.theme)),
+    );
+  }
+
+  out.push(statRow(c.stats.slice(0, s.statCols), pad, statY, W - pad * 2, s.stat, s.statLabel));
+  out.push(footer(pad, footY, s.foot, W - pad));
+  return out.join('\n    ');
+}
+
+/** Wide: the verdict block on the left, the year and the lists on the right. */
+function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
+  const [W, H] = CARD_SIZES.wide;
+  const panelW = 500;
+  const pad = 52;
+  const out: string[] = [];
+  const dark = c.theme.bg[0];
+
+  out.push(`<rect width="${panelW}" height="${H}" fill="${c.theme.accent}"/>`);
+  out.push(`<text x="${pad}" y="70" font-size="22" font-family="${headline()}" letter-spacing="2" fill="${dark}">COMMITALE · ${w.year}</text>`);
+  out.push(`<text x="${pad}" y="150" font-size="22" font-weight="800" letter-spacing="3" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.iAm))}</text>`);
+  const fit = fitName(c.name, 116, 60, panelW - pad * 2);
+  let y = 150 + 18;
+  fit.lines.forEach((line) => {
+    y += Math.round(fit.size * 0.98);
+    out.push(`<text x="${pad}" y="${y}" font-size="${fit.size}" font-family="${headline()}" font-weight="800" fill="${dark}">${esc(line)}</text>`);
+  });
+  if (c.ai) {
+    y += 54;
+    out.push(`<text x="${pad}" y="${y}" font-size="15" font-weight="800" letter-spacing="2" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.myAiStyle))}</text>`);
+    y += 44;
+    out.push(`<text x="${pad}" y="${y}" font-size="38" fill="${dark}">${c.ai.emoji}<tspan dx="8" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
+  }
+  out.push(sticker(c.emoji, panelW - 70, 92, 84, id));
+
+  const x0 = panelW + 44;
+  const areaW = W - x0 - 48;
+  out.push(waveform(w, c.theme, id, x0, 34, areaW, 120));
+  const lists = [[t.topRepos, c.repos], [t.topLanguages, c.languages]].filter(([, items]) => items.length > 0) as [string, string[]][];
+  const colW = (areaW - 32) / lists.length;
+  const sizes = { listTitle: 15, rank: 30, item: 22, row: 42 };
+  lists.forEach(([title, items], i) => out.push(topList(title, items.slice(0, 3), x0 + i * (colW + 32), 206, colW, sizes, c.theme)));
+  out.push(statRow(c.stats.slice(0, 3), x0, 500, areaW, 56, 16));
+  out.push(footer(x0, 590, 17, W - 48));
+  return out.join('\n    ');
+}
+
+function header(w: Wrapped, c: Content, pad: number, y: number, size: number, W: number): string {
+  return `<text x="${pad}" y="${y}" font-size="${size}" font-family="${headline()}" letter-spacing="${size / 12}" fill="${c.theme.accent}">COMMITALE · ${w.year}</text>
+    <text x="${W - pad}" y="${y}" font-size="${Math.round(size * 0.78)}" text-anchor="end" fill="#fff" fill-opacity="0.72">${esc(w.name)}</text>`;
+}
+
+/** The command to try it, and where to find the project. */
+function footer(x: number, y: number, size: number, right: number): string {
+  return `<text x="${x}" y="${y}" font-size="${size}" font-family="${MONO}" fill="#fff" fill-opacity="0.6">$ npx commitale</text>
+    <text x="${right}" y="${y}" font-size="${size}" text-anchor="end" fill="#fff" fill-opacity="0.45">github.com/qry6868/commitale</text>`;
+}
+
+/**
+ * The year as a waveform: one bar per week, its height the square root of that
+ * week's commits (so one huge week doesn't flatten the rest). Weeks rather than days
+ * keep the bars thick enough to read as a bold shape; quiet weeks stay as faint dots.
+ */
+function waveform(w: Wrapped, theme: Theme, id: string, x: number, y: number, width: number, height: number): string {
+  const start = Date.UTC(w.year, 0, 1);
+  const values = new Array<number>(Math.ceil(w.daysInYear / 7)).fill(0);
+  for (let i = 0; i < w.daysInYear; i++) values[Math.floor(i / 7)] += w.daily[new Date(start + i * 86_400_000).toISOString().slice(0, 10)] ?? 0;
+  const max = Math.max(...values, 1);
+  const step = width / values.length;
+  const bar = Math.max(2, step * 0.62);
+  const mid = y + height / 2;
+  const active: string[] = [];
+  const quiet: string[] = [];
+  values.forEach((v, i) => {
+    const h = v === 0 ? bar : Math.max(bar * 2, Math.sqrt(v / max) * height);
+    (v === 0 ? quiet : active).push(`<rect x="${(x + i * step).toFixed(1)}" y="${(mid - h / 2).toFixed(1)}" width="${bar.toFixed(1)}" height="${h.toFixed(1)}" rx="${(bar / 2).toFixed(1)}"/>`);
+  });
+  return `<linearGradient id="${id}-wave" gradientUnits="userSpaceOnUse" x1="${x}" y1="0" x2="${x + width}" y2="0">
+      <stop offset="0" stop-color="${theme.glow[0]}"/><stop offset="0.5" stop-color="${theme.heat[4]}"/><stop offset="1" stop-color="${theme.glow[1]}"/>
+    </linearGradient>
+    <g fill="#fff" fill-opacity="0.18">${quiet.join('')}</g>
+    <g fill="url(#${id}-wave)">${active.join('')}</g>`;
+}
+
+function verdictPanel(
+  c: Content,
+  t: Strings,
+  o: { x: number; y: number; width: number; pad: number; label: number; max: number; min: number; sticker: number; id: string },
+): { svg: string; height: number } {
+  const dark = c.theme.bg[0];
+  // Leave room on the right for the sticker that overlaps the block's top edge.
+  const fit = fitName(c.name, o.max, o.min, o.width - o.pad * 2 - Math.round(o.sticker * 1.1));
+  const top = Math.round(o.label * 1.9);
+  let y = o.y + top;
+  const parts = [`<text x="${o.pad}" y="${y}" font-size="${o.label}" font-weight="800" letter-spacing="${o.label / 7}" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.iAm))}</text>`];
+  fit.lines.forEach((line, i) => {
+    y += Math.round(fit.size * (i === 0 ? 1.02 : 0.96));
+    parts.push(`<text x="${o.pad}" y="${y}" font-size="${fit.size}" font-family="${headline()}" font-weight="800" fill="${dark}">${esc(line)}</text>`);
+  });
+  const height = y - o.y + Math.round(o.label * 1.6);
+  const rect = `<rect x="${o.x}" y="${o.y}" width="${o.width}" height="${height}" fill="${c.theme.accent}"/>`;
+  // The emoji sits on the block's top edge like a sticker.
+  const stick = sticker(c.emoji, o.x + o.width - o.pad - o.sticker * 0.55, o.y, o.sticker, o.id);
+  return { svg: [rect, ...parts, stick].join('\n    '), height };
+}
+
+function sticker(emoji: string, cx: number, cy: number, size: number, id: string): string {
+  const r = Math.round(size * 0.66);
+  return `<g transform="rotate(-10 ${Math.round(cx)} ${Math.round(cy)})" filter="url(#${id}-shadow)">
+      <circle cx="${Math.round(cx)}" cy="${Math.round(cy)}" r="${r}" fill="#fff"/>
+      <text x="${Math.round(cx)}" y="${Math.round(cy + size * 0.35)}" font-size="${size}" text-anchor="middle">${emoji}</text>
+    </g>`;
+}
+
+function topList(
+  title: string,
+  items: string[],
+  x: number,
+  y: number,
+  width: number,
+  s: { listTitle: number; rank: number; item: number; row: number },
+  theme: Theme,
+): string {
+  const rankW = Math.round(s.rank * 0.9);
+  const rows = items.map((item, i) => {
+    const baseline = y + s.listTitle + 18 + Math.round(s.row * (i + 0.72));
+    return `<text x="${x}" y="${baseline}" font-size="${s.rank}" font-family="${headline()}" fill="${theme.accent}">${i + 1}</text>
+    <text x="${x + rankW}" y="${baseline}" font-size="${s.item}" font-weight="600" fill="#fff">${esc(ellipsize(item, s.item, width - rankW))}</text>`;
+  });
+  return `<text x="${x}" y="${y + s.listTitle}" font-size="${s.listTitle}" font-weight="700" letter-spacing="${s.listTitle / 8}" fill="#fff" fill-opacity="0.6">${esc(upperLabel(title))}</text>
+    ${rows.join('\n    ')}`;
+}
+
+function statRow(stats: [string, string][], x: number, y: number, width: number, max: number, label: number): string {
+  const col = width / stats.length;
+  // One size for the whole row, small enough that the widest value ("6.7 亿") clears its column.
+  const widest = Math.max(...stats.map(([value]) => headlineWidth(value, max)));
+  const size = Math.floor(widest > col - 48 ? (max * (col - 48)) / widest : max);
+  return stats
+    .map(
+      ([value, name], i) => `<text x="${Math.round(x + i * col)}" y="${y}" font-size="${size}" font-family="${headline()}" font-weight="800" fill="#fff">${esc(value)}</text>
+    <text x="${Math.round(x + i * col)}" y="${y + Math.round(label * 1.8)}" font-size="${label}" fill="#fff" fill-opacity="0.66">${esc(ellipsize(name, label, col - 12))}</text>`,
+    )
+    .join('\n    ');
+}
+
+/**
+ * The largest size, stepping down, at which `text` fits `width`: in up to two lines for
+ * Latin names (bigger type reads better on a poster), on one line for CJK names, which
+ * must not break mid-word.
+ */
+function fitName(text: string, max: number, min: number, width: number): { size: number; lines: string[] } {
+  if (CJK.test(text)) {
+    let size = max;
+    while (size > min && headlineWidth(text, size) > width) size -= 2;
+    return { size, lines: [text] };
+  }
+  for (let size = max; size > min; size -= 6) {
     const lines = breakLines(text, size, width);
-    if (lines.length <= 2) return { size, lines };
+    if (lines.length <= 2 && lines.every((l) => headlineWidth(l, size) <= width)) return { size, lines };
   }
   return { size: min, lines: breakLines(text, min, width).slice(0, 2) };
 }
 
-/** Greedy line breaks by estimated width; words stay whole, CJK breaks anywhere. */
 function breakLines(text: string, size: number, width: number): string[] {
   const tokens = text.match(/[⺀-鿿가-힯＀-￯]|[^\s⺀-鿿가-힯＀-￯]+|\s+/g) ?? [];
   const lines: string[] = [];
   let line = '';
   for (const token of tokens) {
     const next = line + token;
-    if (line.trim() && textWidth(next.trimEnd(), size) > width) {
+    if (line.trim() && headlineWidth(next.trimEnd(), size) > width) {
       lines.push(line.trimEnd());
       line = token.trimStart();
     } else {
@@ -165,14 +282,32 @@ function breakLines(text: string, size: number, width: number): string[] {
   return lines;
 }
 
-/** Rough rendered width: SVG can't measure text, so estimate per character class. */
+/** Estimated width in the condensed headline face (CJK falls back to a full-width face). */
+function headlineWidth(text: string, size: number): number {
+  let w = 0;
+  for (const ch of text) w += CJK.test(ch) ? size : ch === ' ' ? size * 0.22 : size * 0.46;
+  return w;
+}
+
+/** Estimated width in the body face. */
 export function textWidth(text: string, size: number): number {
   let w = 0;
   for (const ch of text) {
-    if (/[⺀-鿿가-힯＀-￯]/.test(ch)) w += size;
+    if (CJK.test(ch)) w += size;
     else if (/[A-Z0-9]/.test(ch)) w += size * 0.64;
     else if (ch === ' ') w += size * 0.28;
     else w += size * 0.54;
   }
   return Math.round(w);
 }
+
+/** Shortens text with an ellipsis until its estimated width fits. */
+function ellipsize(text: string, size: number, width: number): string {
+  if (textWidth(text, size) <= width) return text;
+  const chars = [...text];
+  while (chars.length > 1 && textWidth(`${chars.join('')}…`, size) > width) chars.pop();
+  return `${chars.join('')}…`;
+}
+
+const upper = (s: string): string => (CJK.test(s) ? s : s.toUpperCase());
+const upperLabel = upper;
