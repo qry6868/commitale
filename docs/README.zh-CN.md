@@ -13,7 +13,7 @@
 
 [English](../README.md) · 简体中文
 
-<img src="../assets/demo-poster.svg" alt="Commitale 海报卡片，我的 2026 Coding 年度报告：Coding 时，我是夜猫子，AI 搭档类型是结对搭档，653 次提交、6.7 亿 AI token、最长连续 41 天。" width="760">
+<img src="../assets/demo-poster.svg" alt="Commitale 海报卡片，我的 2026 Coding 年度报告：Coding 时，我是夜猫子（38% 的提交在晚上 10 点到凌晨 5 点之间），AI 搭档类型是结对搭档，653 次提交、6.7 亿 AI token、最长连续 41 天。" width="760">
 
 </div>
 

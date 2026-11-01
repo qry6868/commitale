@@ -20,6 +20,8 @@ interface Content {
   theme: Theme;
   name: string;
   emoji: string;
+  /** The fact that earned the personality, e.g. "38% of my commits landed between 10 PM and 5 AM". */
+  punchline: string;
   ai?: { emoji: string; name: string };
   /** No repo names here: plenty of people would rather not post those. */
   lists: { title: string; items: Item[] }[];
@@ -41,6 +43,7 @@ export function renderPoster(w: Wrapped, t: Strings, format: CardFormat = 'wide'
     theme,
     name: CJK.test(persona.name) ? persona.name : persona.name.toUpperCase(),
     emoji: persona.emoji,
+    punchline: t.punchlines[w.personas[0]](w),
     ai: styleId ? { emoji: t.aiStyles[styleId].emoji, name: t.aiStyles[styleId].name } : undefined,
     lists: [
       {
@@ -85,21 +88,22 @@ function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' |
   const [W, H] = CARD_SIZES[format];
   const pad = story ? 72 : 64;
   const s = story
-    ? { head: 46, waveY: 140, waveH: 300, label: 30, nameMax: 190, nameMin: 110, sticker: 150, aiLabel: 24, aiName: 64, listTitle: 26, rank: 46, item: 34, row: 66, maxRows: 5, stat: 92, statLabel: 22, statCols: 4, foot: 26 }
-    : { head: 34, waveY: 110, waveH: 150, label: 24, nameMax: 140, nameMin: 80, sticker: 104, aiLabel: 20, aiName: 46, listTitle: 20, rank: 34, item: 26, row: 46, maxRows: 3, stat: 66, statLabel: 18, statCols: 3, foot: 20 };
+    ? { head: 46, waveY: 140, waveH: 280, axis: 20, label: 30, nameMax: 190, nameMin: 110, sticker: 150, aiLabel: 24, aiName: 64, listTitle: 26, rank: 46, item: 34, row: 66, maxRows: 5, stat: 92, statLabel: 22, statCols: 4, foot: 26 }
+    : { head: 34, waveY: 110, waveH: 110, axis: 17, label: 24, nameMax: 140, nameMin: 80, sticker: 104, aiLabel: 20, aiName: 46, listTitle: 20, rank: 34, item: 26, row: 46, maxRows: 3, stat: 66, statLabel: 18, statCols: 3, foot: 20 };
   const out: string[] = [];
 
   out.push(header(w, t, c, pad, story ? 92 : 76, s.head, W));
   out.push(waveform(w, c.theme, id, 0, s.waveY, W, s.waveH));
+  out.push(monthAxis(w, t, 0, W, s.waveY + s.waveH + Math.round(s.axis * 1.6), s.axis));
 
   // The verdict: a full-bleed flat block in the personality's colour.
-  const panelY = s.waveY + s.waveH + (story ? 36 : 24);
+  const panelY = s.waveY + s.waveH + Math.round(s.axis * 3.2);
   const panel = verdictPanel(c, t, { x: 0, y: panelY, width: W, pad, label: s.label, max: s.nameMax, min: s.nameMin, sticker: s.sticker, id });
   out.push(panel.svg);
   let y = panelY + panel.height;
 
   if (c.ai) {
-    y += story ? 66 : 46;
+    y += story ? 66 : 40;
     out.push(`<text x="${pad}" y="${y}" font-size="${s.aiLabel}" font-weight="700" letter-spacing="${s.aiLabel / 8}" fill="${c.theme.accent}">${esc(t.myAiStyle.toUpperCase())}</text>`);
     y += Math.round(s.aiName * 1.05);
     out.push(`<text x="${pad}" y="${y}" font-size="${s.aiName}" fill="#fff">${c.ai.emoji}<tspan dx="${Math.round(s.aiName * 0.25)}" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
@@ -108,7 +112,7 @@ function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' |
   // Stats and footer are pinned to the bottom; the lists get the space in between.
   const footY = H - (story ? 64 : 44);
   const statY = footY - (story ? 120 : 78);
-  const listTop = y + (story ? 84 : 58);
+  const listTop = y + (story ? 84 : 50);
   const roomForRows = statY - s.stat - (story ? 70 : 44) - (listTop + s.listTitle + 18);
   const rows = Math.min(s.maxRows, Math.floor(roomForRows / s.row));
   if (rows >= 2) {
@@ -135,16 +139,21 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   // Say outright what this is: a stranger scrolling past should see "a year of code" first.
   out.push(`<text x="${pad}" y="76" font-size="32" font-family="${headline()}" font-weight="800" letter-spacing="1" fill="${dark}">${esc(upper(t.cardTitle(w.year)))}</text>`);
   out.push(`<text x="${pad}" y="150" font-size="22" font-weight="800" letter-spacing="3" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.iAm))}</text>`);
-  const fit = fitName(c.name, 116, 60, panelW - pad * 2);
+  // Capped below the panel's full height so a two-line name, the punchline and the AI
+  // style all clear the sticker in the bottom corner.
+  const fit = fitName(c.name, 100, 56, panelW - pad * 2);
   let y = 150 + 18;
   fit.lines.forEach((line) => {
     y += Math.round(fit.size * 0.98);
     out.push(`<text x="${pad}" y="${y}" font-size="${fit.size}" font-family="${headline()}" font-weight="800" fill="${dark}">${esc(line)}</text>`);
   });
+  // CJK glyphs sit lower than Latin caps, so give them more room above the punchline.
+  y += CJK.test(c.name) ? 46 : 36;
+  out.push(punchline(c, pad, y, 19, panelW - pad * 2));
   if (c.ai) {
-    y += 54;
+    y += 46;
     out.push(`<text x="${pad}" y="${y}" font-size="15" font-weight="800" letter-spacing="2" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.myAiStyle))}</text>`);
-    y += 44;
+    y += 42;
     out.push(`<text x="${pad}" y="${y}" font-size="38" fill="${dark}">${c.ai.emoji}<tspan dx="8" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
   }
   // Bottom corner: the title runs along the top, and the name and AI style fill the middle.
@@ -153,6 +162,7 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   const x0 = panelW + 44;
   const areaW = W - x0 - 48;
   out.push(waveform(w, c.theme, id, x0, 34, areaW, 120));
+  out.push(monthAxis(w, t, x0, areaW, 176, 13));
   const colW = (areaW - 32) / c.lists.length;
   const sizes = { listTitle: 15, rank: 30, item: 22, row: 42 };
   c.lists.forEach(({ title, items }, i) => out.push(topList(title, items.slice(0, 3), x0 + i * (colW + 32), 206, colW, sizes, c.theme)));
@@ -198,6 +208,24 @@ function waveform(w: Wrapped, theme: Theme, id: string, x: number, y: number, wi
     <g fill="url(#${id}-wave)">${active.join('')}</g>`;
 }
 
+/** Month names under the waveform, each centred on its own stretch of bars, so the shape reads as a year. */
+function monthAxis(w: Wrapped, t: Strings, x: number, width: number, y: number, size: number): string {
+  const start = Date.UTC(w.year, 0, 1);
+  const step = width / Math.ceil(w.daysInYear / 7);
+  const labels = t.months.map((name, m) => {
+    const mid = (Date.UTC(w.year, m, 15) - start) / 86_400_000 / 7;
+    return `<text x="${(x + mid * step).toFixed(1)}" y="${y}">${esc(name)}</text>`;
+  });
+  return `<g font-size="${size}" text-anchor="middle" fill="#fff" fill-opacity="0.45">${labels.join('')}</g>`;
+}
+
+/** The punchline, shrunk to one line if it has to be. */
+function punchline(c: Content, x: number, y: number, max: number, width: number): string {
+  const natural = textWidth(c.punchline, max);
+  const size = natural > width ? Math.floor((max * width) / natural) : max;
+  return `<text x="${x}" y="${y}" font-size="${size}" font-weight="700" fill="${c.theme.bg[0]}" fill-opacity="0.85">${esc(c.punchline)}</text>`;
+}
+
 function verdictPanel(
   c: Content,
   t: Strings,
@@ -213,6 +241,8 @@ function verdictPanel(
     y += Math.round(fit.size * (i === 0 ? 1.02 : 0.96));
     parts.push(`<text x="${o.pad}" y="${y}" font-size="${fit.size}" font-family="${headline()}" font-weight="800" fill="${dark}">${esc(line)}</text>`);
   });
+  y += Math.round(o.label * (CJK.test(c.name) ? 2.1 : 1.75));
+  parts.push(punchline(c, o.pad, y, Math.round(o.label * 1.1), o.width - o.pad * 2));
   const height = y - o.y + Math.round(o.label * 1.6);
   const rect = `<rect x="${o.x}" y="${o.y}" width="${o.width}" height="${height}" fill="${c.theme.accent}"/>`;
   // The emoji sits on the block's top edge like a sticker.

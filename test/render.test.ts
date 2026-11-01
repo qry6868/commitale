@@ -54,6 +54,9 @@ for (const lang of ['en', 'zh'] as const) {
           assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>|secret-plans/, `${persona} poster ${f}`);
           // Someone scrolling past should see at once that this is about code.
           assert.ok(posters[f].toLowerCase().includes(t.cardTitle(2026).toLowerCase()), `${persona} poster ${f} says what it is`);
+          // The fact behind the personality, and the waveform's month axis.
+          assert.ok(posters[f].includes(t.punchlines[persona](w)), `${persona} poster ${f} has its punchline`);
+          assert.ok(posters[f].includes(`>${t.months[11]}</text>`), `${persona} poster ${f} labels the months`);
           // A square poster drops its lists when a two-line name leaves no room.
           if (f !== 'square') assert.ok(posters[f].includes(t.types.fix), `${persona} poster ${f} lists commit types`);
           assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');

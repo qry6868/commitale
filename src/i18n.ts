@@ -120,9 +120,12 @@ export interface Strings {
   topLanguages: string;
 
   personas: Record<PersonaId, Persona>;
+  /** One line of proof under the personality on a poster, in the first person. */
+  punchlines: Record<PersonaId, (w: Wrapped) => string>;
 }
 
 const activeLanguages = (w: Wrapped): number => w.languages.filter((l) => l.share >= 0.05).length;
+const morningShare = (w: Wrapped): number => w.byHour.slice(5, 9).reduce((a, b) => a + b, 0) / w.commits;
 
 /** +32% / −12%, with a real minus sign. */
 const signed = (p: number): string => `${p >= 0 ? '+' : '−'}${Math.abs(p)}%`;
@@ -261,6 +264,17 @@ const en: Strings = {
   card: 'Share card',
   topLanguages: 'Top languages',
 
+  punchlines: {
+    nightOwl: (w) => `${pct(w.nightShare)}% of my commits landed between 10 PM and 5 AM`,
+    earlyBird: (w) => `${pct(morningShare(w))}% of my commits landed before 9 AM`,
+    weekendWarrior: (w) => `${pct(w.weekendShare)}% of my commits landed on weekends`,
+    marathoner: (w) => `I committed ${w.longestStreak.days} days in a row`,
+    bugHunter: (w) => `${pct(w.fixCommits / w.commits)}% of my commits were fixes`,
+    cleaner: (w) => `I deleted ${compact(w.deleted - w.added)} more lines than I wrote`,
+    polyglot: (w) => `I coded in ${activeLanguages(w)} languages this year`,
+    nineToFive: (w) => `${fmt(w.activeDays)} days of coding, mostly 9 to 6`,
+    builder: (w) => `I coded on ${fmt(w.activeDays)} days this year`,
+  },
   personas: {
     nightOwl: {
       emoji: '🦉',
@@ -429,6 +443,17 @@ const zh: Strings = {
   card: '分享卡片',
   topLanguages: '常用语言',
 
+  punchlines: {
+    nightOwl: (w) => `${pct(w.nightShare)}% 的提交在晚上 10 点到凌晨 5 点之间`,
+    earlyBird: (w) => `${pct(morningShare(w))}% 的提交在早上 9 点之前`,
+    weekendWarrior: (w) => `${pct(w.weekendShare)}% 的提交发生在周末`,
+    marathoner: (w) => `连续 ${w.longestStreak.days} 天，每天都有提交`,
+    bugHunter: (w) => `${pct(w.fixCommits / w.commits)}% 的提交都在修 bug`,
+    cleaner: (w) => `删掉的代码比写的还多 ${compact(w.deleted - w.added)} 行`,
+    polyglot: (w) => `今年用 ${activeLanguages(w)} 种语言写了代码`,
+    nineToFive: (w) => `${fmt(w.activeDays)} 天 Coding，大多在朝九晚六`,
+    builder: (w) => `今年有 ${fmt(w.activeDays)} 天在 Coding`,
+  },
   personas: {
     nightOwl: {
       emoji: '🦉',
