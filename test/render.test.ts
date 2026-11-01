@@ -13,7 +13,7 @@ const FORMATS: CardFormat[] = ['wide', 'square', 'story'];
 function commits(): Commit[] {
   return ['2026-01-05', '2026-01-06', '2026-03-10'].map((date, i) => ({
     hash: `h${i}`,
-    repo: '/code/app',
+    repo: '/code/secret-plans',
     authorName: 'Ada',
     authorEmail: 'ada@example.com',
     date,
@@ -44,13 +44,16 @@ for (const lang of ['en', 'zh'] as const) {
         for (const f of FORMATS) {
           const [width, height] = CARD_SIZES[f];
           assert.ok(cards[f].startsWith(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"`));
-          assert.doesNotMatch(cards[f], /NaN|undefined|Ada <&>/, `${persona} ${f}`);
+          // Share images never name a repo; the report the user keeps can.
+          assert.doesNotMatch(cards[f], /NaN|undefined|Ada <&>|secret-plans/, `${persona} ${f}`);
           assert.ok(cards[f].includes(`id="${f}-bg"`), 'ids are unique per format');
           assert.equal(cards[f].includes(t.cardVs(50, 2025, false)), Boolean(previous), `${persona} ${f} comparison`);
         }
         const posters = Object.fromEntries(FORMATS.map((f) => [f, renderPoster(w, t, f)])) as Record<CardFormat, string>;
         for (const f of FORMATS) {
-          assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>/, `${persona} poster ${f}`);
+          assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>|secret-plans/, `${persona} poster ${f}`);
+          // A square poster drops its lists when a two-line name leaves no room.
+          if (f !== 'square') assert.ok(posters[f].includes(t.types.fix), `${persona} poster ${f} lists commit types`);
           assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');
           // Names are uppercased for the headline face, and CJK names must stay on one line.
           assert.ok(posters[f].toLowerCase().includes(t.personas[persona].name.split(' ').pop()!.toLowerCase()), `${persona} poster names the personality`);

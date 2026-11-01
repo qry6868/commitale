@@ -1,5 +1,5 @@
 import { aiStyle } from '../ai.ts';
-import { compact, escapeXml as esc, fmt } from '../format.ts';
+import { compact, escapeXml as esc, fmt, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import type { Wrapped } from '../stats.ts';
 import { CARD_SIZES, DISPLAY, FONT, type CardFormat, type CardOptions } from './card.ts';
@@ -10,14 +10,19 @@ const MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 const CJK = /[⺀-鿿가-힯＀-￯]/;
 const headline = (): string => `'${HEADLINE_FAMILY}', ${DISPLAY()}`;
 
+interface Item {
+  name: string;
+  share: number;
+}
+
 /** Everything a poster shows, worked out once and laid out per size. */
 interface Content {
   theme: Theme;
   name: string;
   emoji: string;
   ai?: { emoji: string; name: string };
-  repos: string[];
-  languages: string[];
+  /** No repo names here: plenty of people would rather not post those. */
+  lists: { title: string; items: Item[] }[];
   stats: [value: string, label: string][];
 }
 
@@ -37,8 +42,16 @@ export function renderPoster(w: Wrapped, t: Strings, format: CardFormat = 'wide'
     name: CJK.test(persona.name) ? persona.name : persona.name.toUpperCase(),
     emoji: persona.emoji,
     ai: styleId ? { emoji: t.aiStyles[styleId].emoji, name: t.aiStyles[styleId].name } : undefined,
-    repos: w.topRepos.map((r) => r.name).slice(0, 5),
-    languages: w.languages.map((l) => l.name).slice(0, 5),
+    lists: [
+      {
+        title: t.cardTypes,
+        items: w.commitTypes
+          .filter((k) => k.type !== 'other')
+          .slice(0, 5)
+          .map((k) => ({ name: t.types[k.type], share: k.count / w.commits })),
+      },
+      { title: t.topLanguages, items: w.languages.slice(0, 5) },
+    ].filter((list) => list.items.length > 0),
     stats: [
       [w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), t.cardCommits],
       w.ai ? [t.tokens(w.ai.tokens), t.cardTokens] : [compact(w.added), t.cardAdded],
@@ -99,9 +112,8 @@ function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' |
   const roomForRows = statY - s.stat - (story ? 70 : 44) - (listTop + s.listTitle + 18);
   const rows = Math.min(s.maxRows, Math.floor(roomForRows / s.row));
   if (rows >= 2) {
-    const lists = [[t.topRepos, c.repos], [t.topLanguages, c.languages]].filter(([, items]) => items.length > 0) as [string, string[]][];
-    const colW = (W - pad * 2 - 40) / lists.length;
-    lists.forEach(([title, items], i) =>
+    const colW = (W - pad * 2 - 40) / c.lists.length;
+    c.lists.forEach(({ title, items }, i) =>
       out.push(topList(title, items.slice(0, rows), pad + i * (colW + 40), listTop, colW, s, c.theme)),
     );
   }
@@ -139,10 +151,9 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   const x0 = panelW + 44;
   const areaW = W - x0 - 48;
   out.push(waveform(w, c.theme, id, x0, 34, areaW, 120));
-  const lists = [[t.topRepos, c.repos], [t.topLanguages, c.languages]].filter(([, items]) => items.length > 0) as [string, string[]][];
-  const colW = (areaW - 32) / lists.length;
+  const colW = (areaW - 32) / c.lists.length;
   const sizes = { listTitle: 15, rank: 30, item: 22, row: 42 };
-  lists.forEach(([title, items], i) => out.push(topList(title, items.slice(0, 3), x0 + i * (colW + 32), 206, colW, sizes, c.theme)));
+  c.lists.forEach(({ title, items }, i) => out.push(topList(title, items.slice(0, 3), x0 + i * (colW + 32), 206, colW, sizes, c.theme)));
   out.push(statRow(c.stats.slice(0, 3), x0, 500, areaW, 56, 16));
   out.push(footer(x0, 590, 17, W - 48));
   return out.join('\n    ');
@@ -217,7 +228,7 @@ function sticker(emoji: string, cx: number, cy: number, size: number, id: string
 
 function topList(
   title: string,
-  items: string[],
+  items: Item[],
   x: number,
   y: number,
   width: number,
@@ -227,8 +238,11 @@ function topList(
   const rankW = Math.round(s.rank * 0.9);
   const rows = items.map((item, i) => {
     const baseline = y + s.listTitle + 18 + Math.round(s.row * (i + 0.72));
+    const share = `${pct(item.share)}%`;
+    const shareW = textWidth(share, s.item) + 12;
     return `<text x="${x}" y="${baseline}" font-size="${s.rank}" font-family="${headline()}" fill="${theme.accent}">${i + 1}</text>
-    <text x="${x + rankW}" y="${baseline}" font-size="${s.item}" font-weight="600" fill="#fff">${esc(ellipsize(item, s.item, width - rankW))}</text>`;
+    <text x="${x + rankW}" y="${baseline}" font-size="${s.item}" font-weight="600" fill="#fff">${esc(ellipsize(item.name, s.item, width - rankW - shareW))}</text>
+    <text x="${x + width}" y="${baseline}" font-size="${s.item}" fill="#fff" fill-opacity="0.55" text-anchor="end">${share}</text>`;
   });
   return `<text x="${x}" y="${y + s.listTitle}" font-size="${s.listTitle}" font-weight="700" letter-spacing="${s.listTitle / 8}" fill="#fff" fill-opacity="0.6">${esc(upperLabel(title))}</text>
     ${rows.join('\n    ')}`;

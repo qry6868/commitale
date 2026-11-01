@@ -85,7 +85,7 @@ Commitale reads your local repositories with `git log` and writes two files next
 
 For the AI page, it reads the logs Claude Code (`~/.claude/projects`) and Codex (`~/.codex/sessions`) keep on your machine, and takes **only usage counts, timestamps and model names** from them: never your prompts, replies or code. Don't want it? Add `--no-ai`.
 
-Sharing something about work? `--anonymize` hides repo names and commit messages.
+The share cards never show repo names or commit messages; only the report you keep does. Showing the report itself to someone, say about work? `--anonymize` hides them there too.
 
 ## More ways to run it
 
