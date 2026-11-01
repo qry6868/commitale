@@ -3,6 +3,7 @@ import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
 import { change, type CommitType, type Moment, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
+import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
 
 /** Deep tones for the pages before the reveal, so each one feels like a new story. */
@@ -19,6 +20,10 @@ const SLIDE_COLORS = [
 
 const LINES_PER_PAGE = 50;
 const FORMATS: CardFormat[] = ['wide', 'square', 'story'];
+const STYLES = ['poster', 'data'] as const;
+
+/** Every card the summary page can show: poster and stats styles, in each size. */
+export type Cards = Record<(typeof STYLES)[number], Record<CardFormat, string>>;
 
 interface Slide {
   body: string;
@@ -26,7 +31,7 @@ interface Slide {
   colors?: string[];
 }
 
-export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, string>): string {
+export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
   const theme = themeFor(w);
   const slides: Slide[] = [
     { body: intro(w, t, theme), colors: theme.glow },
@@ -61,7 +66,8 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, str
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>commitale ${w.year} · ${esc(w.name)}</title>
-<style>${CSS}
+<style>${FONT_FACE}
+${CSS}
 :root{--accent:${theme.accent};--g1:${theme.glow[0]};--g2:${theme.heat[4]}}</style>
 </head>
 <body>
@@ -350,10 +356,14 @@ function persona(w: Wrapped, t: Strings): string {
 ${badges}`;
 }
 
-function share(w: Wrapped, t: Strings, cards: Record<CardFormat, string>): string {
+function share(w: Wrapped, t: Strings, cards: Cards): string {
   const file = `commitale-${w.year}.svg`;
-  const tabs = FORMATS.map((f) => `<button class="fmt${f === 'wide' ? ' on' : ''}" data-format="${f}" aria-pressed="${f === 'wide'}">${esc(t.formats[f])}</button>`).join('');
-  const previews = FORMATS.map((f) => `<div class="card card-${f}" data-format="${f}"${f === 'wide' ? '' : ' hidden'}>${cards[f]}</div>`).join('');
+  const styleTabs = STYLES.map((s) => `<button class="${s === 'poster' ? 'on' : ''}" data-style="${s}" aria-pressed="${s === 'poster'}">${esc(t.styles[s])}</button>`).join('');
+  const sizeTabs = FORMATS.map((f) => `<button class="${f === 'wide' ? 'on' : ''}" data-format="${f}" aria-pressed="${f === 'wide'}">${esc(t.formats[f])}</button>`).join('');
+  const tabs = `${styleTabs}</div><div class="formats">${sizeTabs}`;
+  const previews = STYLES.flatMap((s) =>
+    FORMATS.map((f) => `<div class="card card-${f}" data-style="${s}" data-format="${f}"${s === 'poster' && f === 'wide' ? '' : ' hidden'}>${cards[s][f]}</div>`),
+  ).join('');
   // Head, card, actions: stacked on phones (card before the buttons), two columns on desktop.
   return `<div class="summary">
 <div class="summary-head">
@@ -379,7 +389,7 @@ const CSS = `
 *{box-sizing:border-box}
 :root{color-scheme:dark;--ink:#fff;--muted:rgba(255,255,255,.68);--plus:#86efac;--minus:#fda4af}
 html,body{height:100%;overflow:hidden;background:#0d0a1a}
-body{margin:0;color:var(--ink);font-family:${FONT};-webkit-font-smoothing:antialiased;user-select:none;-webkit-tap-highlight-color:transparent}
+body{margin:0;color:var(--ink);font-family:${FONT};--display:'${DISPLAY_FAMILY}',${FONT};-webkit-font-smoothing:antialiased;user-select:none;-webkit-tap-highlight-color:transparent}
 .slide{position:fixed;inset:0;overflow-y:auto;padding:56px 16px 40px;
   background:radial-gradient(circle at 85% 10%,var(--c1) 0,transparent 55%),radial-gradient(circle at 5% 95%,var(--c2) 0,transparent 50%),#0d0a1a;
   opacity:0;visibility:hidden;transform:translateY(28px) scale(.98);
@@ -404,9 +414,9 @@ body{margin:0;color:var(--ink);font-family:${FONT};-webkit-font-smoothing:antial
 .sound{margin-top:14px}
 @media (hover:none),(max-width:960px){.nav{display:none}}
 .kicker{text-transform:uppercase;letter-spacing:.14em;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:16px}
-h1{font-size:clamp(40px,8vw,88px);line-height:1.02;letter-spacing:-.035em;margin:0 0 24px;font-weight:900;text-wrap:balance}
-h2{font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font-weight:800;text-wrap:balance}
-.big{font-size:clamp(64px,13vw,160px);font-weight:900;line-height:.95;letter-spacing:-.045em}
+h1{font-family:var(--display);font-size:clamp(40px,8vw,88px);line-height:1.02;letter-spacing:-.035em;margin:0 0 24px;font-weight:900;text-wrap:balance}
+h2{font-family:var(--display);font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font-weight:800;text-wrap:balance}
+.big{font-family:var(--display);font-size:clamp(64px,13vw,160px);font-weight:900;line-height:.95;letter-spacing:-.045em}
 .sub{font-size:clamp(18px,2.4vw,24px);color:var(--muted);line-height:1.45;margin:12px 0 0;text-wrap:pretty}
 .label{color:var(--muted);font-size:15px;margin:4px 0 20px}
 .delta{display:inline-block;align-self:flex-start;margin:0 0 16px;padding:6px 14px;border-radius:999px;font-weight:800;font-size:18px;background:rgba(255,255,255,.08)}
@@ -423,7 +433,7 @@ h2{font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font
 .months span{grid-row:1;white-space:nowrap}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
 .facts .label{margin-bottom:4px}
-.fact{font-size:clamp(28px,5vw,44px);font-weight:800;letter-spacing:-.02em}
+.fact{font-family:var(--display);font-size:clamp(28px,5vw,44px);font-weight:800;letter-spacing:-.02em}
 .hours{display:flex;align-items:flex-end;gap:3px;height:180px}
 .hours i{flex:1;border-radius:4px 4px 0 0;background:rgba(255,255,255,.28);transform-origin:bottom}
 .in .hours i{animation:grow .6s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(300ms + var(--i) * 25ms)}
@@ -449,16 +459,16 @@ h2{font-size:clamp(26px,4.6vw,44px);letter-spacing:-.02em;margin:4px 0 20px;font
 .ai-style .label{margin:0}
 .ai-style p{margin:8px 0 12px;font-size:18px;line-height:1.45}
 .ai-emoji{display:block;font-size:56px;line-height:1;margin-bottom:14px}
-.ai-name{font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:-.02em;margin:4px 0 0}
+.ai-name{font-family:var(--display);font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:-.02em;margin:4px 0 0}
 .moments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .moment{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 22px}
 .moment .label{margin:0}
-.when{font-size:22px;font-weight:800;margin:6px 0 10px}
+.when{font-family:var(--display);font-size:22px;font-weight:800;margin:6px 0 10px}
 blockquote{margin:0 0 12px;font-size:17px;line-height:1.4;overflow-wrap:anywhere}
 blockquote::before{content:'“'}blockquote::after{content:'”'}
 .repos{list-style:none;padding:0;margin:0;display:grid;gap:12px}
 .repos li{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:16px;padding:16px 20px;border-radius:18px;background:rgba(255,255,255,.07)}
-.rank{font-size:28px;font-weight:900;color:var(--accent)}
+.rank{font-family:var(--display);font-size:28px;font-weight:900;color:var(--accent)}
 .name{font-size:clamp(18px,3vw,26px);font-weight:800;overflow-wrap:anywhere}
 .meta{text-align:right;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
 .chips{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:baseline;margin:8px 0 24px}
@@ -479,7 +489,7 @@ blockquote::before{content:'“'}blockquote::after{content:'”'}
 .summary-head{grid-area:head}#cards{grid-area:cards}.summary-actions{grid-area:actions}
 @media (min-width:960px){.summary{grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);grid-template-areas:"head cards" "actions cards";column-gap:56px;row-gap:0;align-items:center}.summary-head{align-self:end}.summary-actions{align-self:start}}
 .summary h2{margin-bottom:8px}
-.summary-head .formats{margin:16px 0 0}
+.summary-head .formats{margin:12px 8px 0 0}
 .summary-actions .buttons{margin:16px 0 20px}
 .readme{font-size:13px}
 .stack{display:flex;gap:2px;height:22px;margin-bottom:18px}
@@ -499,7 +509,7 @@ button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;background:rgba(0,0,0,.35);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:14px;overflow-x:auto;white-space:nowrap;user-select:text}
 .footer{margin-top:32px;color:var(--muted);font-size:14px}
 .backdrop{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
-.hero-year{position:absolute;right:-1vw;bottom:-4vh;font-size:clamp(160px,32vw,460px);font-weight:900;letter-spacing:-.06em;line-height:.8;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.1);pointer-events:none;user-select:none}
+.hero-year{font-family:var(--display);position:absolute;right:-1vw;bottom:-4vh;font-size:clamp(160px,32vw,460px);font-weight:900;letter-spacing:-.06em;line-height:.8;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.1);pointer-events:none;user-select:none}
 .hero-emoji{position:absolute;right:4vw;top:50%;transform:translateY(-50%) rotate(-8deg);font-size:clamp(200px,34vw,460px);line-height:1;opacity:.12;filter:blur(2px) saturate(1.3);pointer-events:none}
 .heat.mini{gap:2px;margin:12px 0 0;max-width:640px;opacity:.9}
 .heat.mini i{border-radius:2px}
@@ -512,7 +522,7 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 .col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:190px}
 .col i{width:min(22px,100%);height:calc(var(--v) * 150px);min-height:2px;border-radius:4px 4px 0 0;background:rgba(255,255,255,.22);transform-origin:bottom}
 .col.peak i{background:linear-gradient(var(--g2),var(--g1))}
-.col b{font-size:13px;font-weight:800;margin-bottom:6px}
+.col b{font-family:var(--display);font-size:13px;font-weight:800;margin-bottom:6px}
 .col span{margin-top:8px;font-size:11px;color:var(--muted);white-space:nowrap}
 .in .col i{animation:grow .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(450ms + var(--i) * 45ms)}
 .ratio{display:flex;gap:2px;height:28px}
@@ -623,15 +633,23 @@ document.querySelector('.nav .prev').addEventListener('click', prev);
 document.querySelector('.nav .next').addEventListener('click', next);
 show((parseInt(location.hash.slice(1), 10) || 1) - 1);
 
-let format = 'wide';
+const pick = { style: 'poster', format: 'wide' };
 document.querySelectorAll('.formats button').forEach((b) => b.addEventListener('click', () => {
-  format = b.dataset.format;
-  document.querySelectorAll('.formats button').forEach((x) => {
+  const key = b.dataset.style ? 'style' : 'format';
+  pick[key] = b.dataset[key];
+  b.parentElement.querySelectorAll('button').forEach((x) => {
     x.classList.toggle('on', x === b);
     x.setAttribute('aria-pressed', String(x === b));
   });
-  document.querySelectorAll('#cards .card').forEach((c) => { c.hidden = c.dataset.format !== format; });
+  document.querySelectorAll('#cards .card').forEach((c) => {
+    c.hidden = c.dataset.style !== pick.style || c.dataset.format !== pick.format;
+  });
 }));
+// Downloads are standalone files, so they carry the display font the page loaded.
+const fontFace = [...document.styleSheets]
+  .flatMap((sheet) => [...sheet.cssRules])
+  .find((rule) => rule.type === CSSRule.FONT_FACE_RULE);
+const fontStyle = fontFace ? '<style>' + fontFace.cssText + '</style>' : '';
 
 function save(blob, name) {
   const a = document.createElement('a');
@@ -640,15 +658,18 @@ function save(blob, name) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
-const fileName = (ext) => 'commitale-' + YEAR + (format === 'wide' ? '' : '-' + format) + '.' + ext;
-const svgText = () => new XMLSerializer().serializeToString(document.querySelector('#cards .card[data-format="' + format + '"] svg'));
+const fileName = (ext) => 'commitale-' + YEAR + '-' + pick.style + '-' + pick.format + '.' + ext;
+const svgText = () => {
+  const svg = document.querySelector('#cards .card[data-style="' + pick.style + '"][data-format="' + pick.format + '"] svg');
+  return new XMLSerializer().serializeToString(svg).replace('<defs>', '<defs>' + fontStyle);
+};
 const actions = {
   svg: () => save(new Blob([svgText()], { type: 'image/svg+xml' }), fileName('svg')),
   png: async () => {
     const img = new Image();
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText());
     await img.decode();
-    const [w, h] = SIZES[format];
+    const [w, h] = SIZES[pick.format];
     const canvas = document.createElement('canvas');
     canvas.width = w * 2;
     canvas.height = h * 2;

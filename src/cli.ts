@@ -8,6 +8,7 @@ import { aiStyle, hasAiSources, readAiUsage } from './ai.ts';
 import { gitConfig, hasGit, readCommits, repoRoot } from './git.ts';
 import { detectLang, strings, type Lang, type Strings } from './i18n.ts';
 import { renderCard } from './render/card.ts';
+import { renderPoster } from './render/poster.ts';
 import { renderHtml } from './render/html.ts';
 import { renderTerminal } from './render/terminal.ts';
 import { expandHome, findRepos, samePath, searchRoots } from './scan.ts';
@@ -201,16 +202,18 @@ async function main(): Promise<number> {
 
   const outDir = resolve(values.out ?? '.');
   mkdirSync(outDir, { recursive: true });
-  const cards = {
-    wide: renderCard(wrapped, t, 'wide'),
-    square: renderCard(wrapped, t, 'square'),
-    story: renderCard(wrapped, t, 'story'),
-  };
+  const each = (render: typeof renderCard) => ({
+    wide: render(wrapped, t, 'wide'),
+    square: render(wrapped, t, 'square'),
+    story: render(wrapped, t, 'story'),
+  });
+  const cards = { poster: each(renderPoster), data: each(renderCard) };
   const files = {
     html: join(outDir, `commitale-${year}.html`),
     svg: join(outDir, `commitale-${year}.svg`),
   };
-  writeFileSync(files.svg, cards.wide);
+  // The file on disk is the stats card (it reads well in a README) and stands alone, font included.
+  writeFileSync(files.svg, renderCard(wrapped, t, 'wide', { embedFont: true }));
   writeFileSync(files.html, renderHtml(wrapped, t, cards));
   console.log(renderTerminal(wrapped, t, files));
 

@@ -39,6 +39,7 @@
   "homepage": "https://github.com/qry6868/commitale#readme",
   "bugs": "https://github.com/qry6868/commitale/issues",
   "devDependencies": {
+    "@fontsource/space-grotesk": "^5.3.0",
     "@types/node": "^22.10.0",
     "typescript": "^5.9.0"
   }

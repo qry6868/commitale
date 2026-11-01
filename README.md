@@ -13,7 +13,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 
 English · [简体中文](docs/README.zh-CN.md)
 
-<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens, a 41-day streak, a commit heatmap and top languages. Personality: The Night Owl. AI style: The Pair Programmer." width="760">
+<img src="assets/demo-poster.svg" alt="A Commitale poster card: I'm The Night Owl, AI style The Pair Programmer, 653 commits, 674M AI tokens, a 41-day streak." width="760">
 
 </div>
 
@@ -47,7 +47,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Your AI year.** The tokens you spent with Claude Code and Codex, how many sessions and days, your top models, your biggest AI day, and your [AI style](#ai-styles).
 - **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
 - **A soundtrack.** A mellow lo-fi loop, synthesised live in your browser (no audio files), starts on your first tap. The button in the corner turns it off.
-- **A share card in three sizes.** Wide for X, LinkedIn and your GitHub profile; square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
+- **Share cards in two styles and three sizes.** A bold poster or a stats card; wide for X, LinkedIn and your GitHub profile, square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
 
 It runs in your terminal too:
 
@@ -121,6 +121,8 @@ npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gith
 If nothing matches, Commitale lists the authors it found so you can pick yours.
 
 ### Put the card on your GitHub profile
+
+<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens, a 41-day streak, a commit heatmap and top languages. Personality: The Night Owl. AI style: The Pair Programmer." width="600">
 
 Commit the generated `commitale-2026.svg` to your profile repository (`<username>/<username>`) and add:
 

@@ -84,6 +84,9 @@ export interface Strings {
   aiBreakdownTitle: string;
   music: string;
   typesTitle: string;
+  iAm: string;
+  myAiStyle: string;
+  styles: { poster: string; data: string };
   types: Record<CommitType, string>;
   wordsCloud: string;
   summaryTitle: (year: number) => string;
@@ -213,6 +216,9 @@ const en: Strings = {
   aiBreakdownTitle: 'Where the tokens went',
   music: 'Music',
   typesTitle: 'What you committed',
+  iAm: "I'm",
+  myAiStyle: 'My AI style',
+  styles: { poster: 'Poster', data: 'Stats' },
   types: { feature: 'Features', fix: 'Fixes', refactor: 'Refactors', docs: 'Docs', test: 'Tests', chore: 'Chores', other: 'Other' },
   wordsCloud: 'Words you used most',
   summaryTitle: (y) => `That was your ${y}`,
@@ -378,6 +384,9 @@ const zh: Strings = {
   aiBreakdownTitle: 'token 都花在了哪里',
   music: '音乐',
   typesTitle: '你都提交了什么',
+  iAm: '我是',
+  myAiStyle: '我的 AI 搭档类型',
+  styles: { poster: '海报', data: '数据' },
   types: { feature: '新功能', fix: '修 bug', refactor: '重构', docs: '文档', test: '测试', chore: '杂项', other: '其他' },
   wordsCloud: '最常用的词',
   summaryTitle: (y) => `这就是你的 ${y}`,

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { strings } from '../src/i18n.ts';
 import { CARD_SIZES, renderCard, type CardFormat } from '../src/render/card.ts';
 import { renderHtml } from '../src/render/html.ts';
+import { renderPoster } from '../src/render/poster.ts';
 import { change, computeStats, type PersonaId } from '../src/stats.ts';
 import type { Commit } from '../src/types.ts';
 
@@ -47,7 +48,13 @@ for (const lang of ['en', 'zh'] as const) {
           assert.ok(cards[f].includes(`id="${f}-bg"`), 'ids are unique per format');
           assert.equal(cards[f].includes(t.cardVs(50, 2025, false)), Boolean(previous), `${persona} ${f} comparison`);
         }
-        const html = renderHtml(w, t, cards);
+        const posters = Object.fromEntries(FORMATS.map((f) => [f, renderPoster(w, t, f)])) as Record<CardFormat, string>;
+        for (const f of FORMATS) {
+          assert.doesNotMatch(posters[f], /NaN|undefined|Ada <&>/, `${persona} poster ${f}`);
+          assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');
+          assert.ok(posters[f].includes(t.personas[persona].name.split(' ').pop()!), `${persona} poster names the personality`);
+        }
+        const html = renderHtml(w, t, { poster: posters, data: cards });
         assert.doesNotMatch(html, /NaN|undefined/, persona);
         assert.equal(html.includes(t.vsYear(50, 2025, false)), Boolean(previous));
       }

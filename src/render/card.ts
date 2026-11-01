@@ -2,7 +2,11 @@ import { calendar, compact, escapeXml as esc, fmt, heatLevels, onDark, pct } fro
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
 import { change, type Wrapped } from '../stats.ts';
+import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor } from './theme.ts';
+
+/** Headlines and big numbers: Space Grotesk where it has the glyphs, the system face for the rest. */
+export const DISPLAY = () => `'${DISPLAY_FAMILY}', ${FONT}`;
 
 export const FONT =
   "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif";
@@ -71,7 +75,15 @@ const LAYOUTS: Record<CardFormat, Layout> = {
 const UP = '#86efac';
 const DOWN = '#fda4af';
 
-export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'): string {
+export interface CardOptions {
+  /**
+   * Put the display font inside the SVG. Needed for a standalone file; a card shown
+   * inline in the report uses the page's copy instead.
+   */
+  embedFont?: boolean;
+}
+
+export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', options: CardOptions = {}): string {
   const L = LAYOUTS[format];
   const [W, H] = CARD_SIZES[format];
   const theme = themeFor(w);
@@ -107,7 +119,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
           : `<text x="${x + T.w - pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.delta}" font-weight="700" text-anchor="end" fill="${tile.delta >= 0 ? UP : DOWN}">${esc(t.cardVs(tile.delta, tile.base.year, tile.base.partial))}</text>`;
       return `<rect x="${x}" y="${y}" width="${T.w}" height="${T.h}" rx="${Math.round(T.h / 6.6)}" fill="#fff" fill-opacity="0.07"/>
   ${delta}
-  <text x="${x + pad}" y="${y + Math.round(T.h * 0.58)}" font-size="${T.num}" font-weight="800" fill="#fff">${esc(tile.value)}</text>
+  <text x="${x + pad}" y="${y + Math.round(T.h * 0.58)}" font-size="${T.num}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(tile.value)}</text>
   <text x="${x + pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.label}" fill="#fff" fill-opacity="0.66">${esc(tile.label)}</text>`;
     })
     .join('\n  ');
@@ -125,7 +137,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
     .join('');
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${FONT}">
-  <defs>
+  <defs>${options.embedFont ? `<style>${FONT_FACE}</style>` : ''}
     <linearGradient id="${format}-bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="${theme.bg[0]}"/>
       <stop offset="0.55" stop-color="${theme.bg[1]}"/>
@@ -140,7 +152,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
     <circle cx="80" cy="${H + 10}" r="${Math.round(W * 0.19)}" fill="${theme.glow[1]}" fill-opacity="0.32" filter="url(#${format}-glow)"/>
   </g>
   <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
-  <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="800" fill="#fff">${esc(t.cardTitle(w.year))}</text>
+  <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(t.cardTitle(w.year))}</text>
   <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
   ${badges.length === 1 ? personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, theme.accent, badges[0], badges[1])}
   ${tiles}
@@ -159,14 +171,14 @@ function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, 
   if (!P.desc) {
     return `${box}
   <text x="${textX}" y="${P.y + Math.round(P.h / 2 - P.name * 0.3)}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
-  <text x="${textX}" y="${P.y + Math.round(P.h / 2 + P.name * 0.75)}" font-size="${P.name}" font-weight="800" fill="#fff">${esc(name)}</text>`;
+  <text x="${textX}" y="${P.y + Math.round(P.h / 2 + P.name * 0.75)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(name)}</text>`;
   }
   // SVG doesn't wrap text, so break the description into at most two lines ourselves.
   const lines = wrap(desc, Math.floor((P.x + P.w - 40 - textX) / (P.desc * 0.52)), 2);
   const top = P.y + Math.round((P.h - (P.label + P.name * 1.4 + lines.length * P.desc * 1.4)) / 2);
   return `${box}
   <text x="${textX}" y="${top + P.label}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
-  <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="800" fill="#fff">${esc(name)}</text>
+  <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(name)}</text>
   ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 
@@ -200,7 +212,7 @@ function rowBadge(x: number, y: number, w: number, h: number, b: Badge, size: { 
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(Math.min(h, 120) / 5)}" fill="#fff" fill-opacity="0.08"/>
   <text x="${x + Math.round(size.emoji / 2)}" y="${y + Math.round(h / 2 + size.emoji * 0.36)}" font-size="${size.emoji}">${b.emoji}</text>
   <text x="${textX}" y="${y + Math.round(h / 2 - size.name * 0.3)}" font-size="${size.label}" font-weight="700" letter-spacing="${size.label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
-  <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="800" fill="#fff">${esc(b.name)}</text>`;
+  <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>`;
 }
 
 /** Emoji on top, then label, name and a two-line description: for the tall story card. */
@@ -212,7 +224,7 @@ function columnBadge(x: number, y: number, w: number, h: number, b: Badge, accen
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#fff" fill-opacity="0.08"/>
   <text x="${x + pad}" y="${y + pad + Math.round(emoji * 0.9)}" font-size="${emoji}">${b.emoji}</text>
   <text x="${x + pad}" y="${labelY}" font-size="${label}" font-weight="700" letter-spacing="${label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
-  <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="800" fill="#fff">${esc(b.name)}</text>
+  <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>
   ${lines.map((line, i) => `<text x="${x + pad}" y="${nameY + Math.round(desc * 1.5 * (i + 1))}" font-size="${desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 

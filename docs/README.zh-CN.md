@@ -13,7 +13,7 @@
 
 [English](../README.md) · 简体中文
 
-<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、6.7 亿 AI token、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子；AI 搭档类型：结对搭档。" width="760">
+<img src="../assets/demo-poster.svg" alt="Commitale 海报卡片：我是夜猫子，AI 搭档类型是结对搭档，653 次提交、6.7 亿 AI token、最长连续 41 天。" width="760">
 
 </div>
 
@@ -47,7 +47,7 @@
 - **你的 AI 编程年**：今年在 Claude Code 和 Codex 上消耗了多少 token、多少个会话和天数、最常用的模型、用 AI 最多的一天，以及你的 [AI 搭档类型](#ai-搭档类型)。
 - **编程人格**：夜猫子、周末战士、马拉松选手、捉虫猎人……见[全部人格](#编程人格)。
 - **背景音乐**：一段在浏览器里实时合成的 lo-fi 循环音乐（没有音频文件），第一次点击时开始播放，右上角的按钮可以关掉。
-- **三种尺寸的分享卡片**：横版适合 X、LinkedIn 和 GitHub 个人主页；方形和竖版适合朋友圈、小红书和 Instagram。每种编程人格都有自己的配色，支持下载 PNG 和 SVG。
+- **两种风格、三种尺寸的分享卡片**：醒目的海报风或信息完整的数据风；横版适合 X、LinkedIn 和 GitHub 个人主页，方形和竖版适合朋友圈、小红书和 Instagram。每种编程人格都有自己的配色，支持下载 PNG 和 SVG。
 
 终端里也能直接看：
 
@@ -108,6 +108,8 @@ npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gith
 如果一个提交都没匹配上，Commitale 会列出它找到的所有作者，方便你选出自己。
 
 ### 把卡片放到 GitHub 个人主页
+
+<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、6.7 亿 AI token、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子；AI 搭档类型：结对搭档。" width="600">
 
 把生成的 `commitale-2026.svg` 提交到你的个人主页仓库（`<用户名>/<用户名>`），然后在 README 中加入：
 
