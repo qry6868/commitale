@@ -172,7 +172,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const aiEnv = createDemoAi(join(dir, 'ai-logs'), year, new Date());
   console.error(`Demo repos and AI logs created in ${dir}`);
   const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));
-  const result = spawnSync(process.execPath, [cli, join(dir, 'this-year'), join(dir, 'last-year'), '--author', DEMO_AUTHOR.email, '--name', DEMO_AUTHOR.name, ...args], {
+  // Name the year: in January commitale would otherwise wrap the year before.
+  const yearArgs = yearIndex >= 0 ? [] : ['--year', String(year)];
+  const result = spawnSync(process.execPath, [cli, join(dir, 'this-year'), join(dir, 'last-year'), '--author', DEMO_AUTHOR.email, '--name', DEMO_AUTHOR.name, ...yearArgs, ...args], {
     stdio: 'inherit',
     env: { ...process.env, ...aiEnv },
   });

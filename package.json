@@ -18,6 +18,7 @@
     "test": "node --test \"test/**/*.test.ts\"",
     "dev": "node src/cli.ts",
     "demo": "node scripts/demo.ts",
+    "site": "node scripts/site.ts",
     "prepublishOnly": "npm run typecheck && npm test && npm run build"
   },
   "keywords": [
