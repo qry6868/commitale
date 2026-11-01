@@ -82,6 +82,8 @@ export interface Strings {
   terminalAi: string;
   aiStyleIntro: string;
   aiBreakdownTitle: string;
+  music: string;
+  soundHint: string;
   monthsTitle: string;
   weekdaysTitle: string;
   linesMix: string;
@@ -201,6 +203,8 @@ const en: Strings = {
   terminalAi: 'AI usage',
   aiStyleIntro: 'Your AI style',
   aiBreakdownTitle: 'Where the tokens went',
+  music: 'Music',
+  soundHint: 'Best with sound on',
   monthsTitle: 'Commits by month',
   weekdaysTitle: 'By weekday',
   linesMix: 'Added vs deleted',
@@ -356,6 +360,8 @@ const zh: Strings = {
   terminalAi: 'AI 用量',
   aiStyleIntro: '你的 AI 搭档类型',
   aiBreakdownTitle: 'token 都花在了哪里',
+  music: '音乐',
+  soundHint: '建议打开声音',
   monthsTitle: '每月提交',
   weekdaysTitle: '按星期',
   linesMix: '新增与删除',

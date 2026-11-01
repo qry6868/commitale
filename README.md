@@ -46,6 +46,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Your words.** The words you reach for most in commit messages, and how many commits were fixes.
 - **Your AI year.** The tokens you spent with Claude Code and Codex, how many sessions and days, your top models, your biggest AI day, and your [AI style](#ai-styles).
 - **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
+- **A soundtrack.** A mellow lo-fi loop, synthesised live in your browser (no audio files), starts on your first tap. The button in the corner turns it off.
 - **A share card in three sizes.** Wide for X, LinkedIn and your GitHub profile; square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
 
 It runs in your terminal too:
@@ -156,15 +157,15 @@ You get the first one that fits, plus badges for the rest.
 
 ## AI styles
 
-Nearly everyone codes with AI now, so the question is how. Your AI style comes from the tokens you spend per commit. Anthropic puts the average Claude Code user at about [$13 per active day](https://code.claude.com/docs/en/costs), which is tens of millions of tokens, so the middle tier sits around ten million.
+Nearly everyone codes with AI now, so the question is how much. Your AI style comes from the total tokens you spent this year. Anthropic puts the average Claude Code user at about [$13 per active day](https://code.claude.com/docs/en/costs), which works out to a few billion tokens a year, so the middle tier sits there.
 
-| | Style | Tokens per commit |
+| | Style | Tokens this year |
 | --- | --- | --- |
-| 🔍 | The Spot Checker | under 1M |
-| 🤝 | The Pair Programmer | 1M to 5M |
-| 🧭 | The Navigator | 5M to 20M |
-| 🎩 | The Delegator | 20M to 80M |
-| 🌊 | The Vibe Coder | 80M and up |
+| 🔍 | The Spot Checker | under 500M |
+| 🤝 | The Pair Programmer | 500M to 2B |
+| 🧭 | The Navigator | 2B to 10B |
+| 🎩 | The Delegator | 10B to 40B |
+| 🌊 | The Vibe Coder | 40B and up |
 
 ## How it counts
 

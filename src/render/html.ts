@@ -31,6 +31,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, str
   const slides: Slide[] = [
     { body: intro(w, t, theme), colors: theme.glow },
     { body: commits(w, t) },
+    ...ai(w, t).map((body) => ({ body })),
     { body: lines(w, t) },
     { body: heatmap(w, t, theme), colors: theme.glow },
     { body: rhythm(w, t) },
@@ -38,7 +39,6 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, str
     { body: languages(w, t) },
     { body: repos(w, t) },
     { body: words(w, t) },
-    ...ai(w, t).map((body) => ({ body })),
     { body: persona(w, t), colors: theme.glow },
     { body: share(w, t, cards), colors: theme.glow },
   ].filter((s) => Boolean(s.body));
@@ -68,6 +68,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Record<CardFormat, str
 <div class="progress" aria-hidden="true">${slides.map(() => '<i><b></b></i>').join('')}</div>
 ${sections}
 <div class="nav"><button class="prev" aria-label="Previous">‹</button><button class="next" aria-label="Next">›</button></div>
+<button class="music" aria-pressed="false" aria-label="${esc(t.music)}" title="${esc(t.music)}" hidden><i></i><i></i><i></i></button>
 <script>
 const SHARE_TEXT = ${shareText};
 const YEAR = ${w.year};
@@ -115,7 +116,8 @@ function intro(w: Wrapped, t: Strings, theme: Theme): string {
 <div class="kicker" ${reveal(0)}>commitale · ${w.year}</div>
 <h1 ${reveal(1)}>${esc(t.hello(w.name, w.year))}</h1>
 <div ${reveal(2)}><div class="heat mini" aria-hidden="true" style="grid-template-columns:repeat(${cols},minmax(0,1fr))">${cells}</div></div>
-<div class="hint" ${reveal(3)}>${esc(t.scroll)} <span class="arrow">→</span></div>`;
+<div class="hint" ${reveal(3)}>${esc(t.scroll)} <span class="arrow">→</span></div>
+<div class="label sound" ${reveal(4)}>🎧 ${esc(t.soundHint)}</div>`;
 }
 
 function commits(w: Wrapped, t: Strings): string {
@@ -284,7 +286,7 @@ function ai(w: Wrapped, t: Strings): string[] {
   ${deltaTag(change(a.tokens, a.previous?.tokens), a.previous, t, 2)}
   <p class="sub" ${reveal(2)}>${esc(t.aiSub(a.sessions, a.activeDays))}</p>
 </div>
-${style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${style.emoji}</span><div class="label">${esc(t.aiStyleIntro)}</div><div class="ai-name">${esc(style.name)}</div><p>${esc(style.desc)}</p><div class="label">${esc(t.aiPerCommit(t.tokens(Math.round(a.tokens / w.commits))))}</div></div>` : ''}
+${style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${style.emoji}</span><div class="label">${esc(t.aiStyleIntro)}</div><div class="ai-name">${esc(style.name)}</div><p>${esc(style.desc)}</p></div>` : ''}
 </div>`;
   const models = a.models.length
     ? `<div><div class="viz-title">${esc(t.aiModels)}</div><div class="rows ai">${rows(a.models.slice(0, 3))}</div></div>`
@@ -294,7 +296,7 @@ ${style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${style.emo
   <div><div class="viz-title">${esc(t.aiTools)}</div><div class="rows ai">${rows(a.tools)}</div></div>
   ${models}
 </div>
-<p class="sub" ${reveal(2)}>${esc(t.aiBusiest(t.date(a.busiestDay.date), t.tokens(a.busiestDay.tokens)))}</p>
+<p class="sub" ${reveal(2)}>${esc(t.aiBusiest(t.date(a.busiestDay.date), t.tokens(a.busiestDay.tokens)))} ${esc(t.aiPerCommit(t.tokens(Math.round(a.tokens / w.commits))))}</p>
 ${a.cacheRead > 0 ? `<p class="sub" ${reveal(3)}>${esc(t.aiCache(pct(a.cacheRead / a.tokens)))}</p>` : ''}
 <p class="note" ${reveal(4)}>${esc(t.aiNote)}</p>`;
   return [headline, breakdown];
@@ -348,6 +350,14 @@ body{margin:0;color:var(--ink);font-family:${FONT};-webkit-font-smoothing:antial
 .nav button{position:fixed;top:50%;transform:translateY(-50%);z-index:10;width:44px;height:44px;padding:0;border-radius:50%;
   background:rgba(255,255,255,.1);color:#fff;font-size:26px;line-height:44px}
 .nav .prev{left:12px}.nav .next{right:12px}
+.music{position:fixed;top:28px;right:16px;z-index:11;display:flex;align-items:center;justify-content:center;gap:3px;width:40px;height:40px;padding:0;border-radius:50%;background:rgba(255,255,255,.12)}
+.music[hidden]{display:none}
+.music i{display:block;width:3px;height:6px;border-radius:2px;background:#fff;opacity:.55}
+.music.on{background:rgba(255,255,255,.2)}
+.music.on i{opacity:1;animation:eq 1s ease-in-out infinite}
+.music.on i:nth-child(2){animation-delay:.2s}.music.on i:nth-child(3){animation-delay:.4s}
+@keyframes eq{50%{height:16px}}
+.sound{margin-top:14px}
 @media (hover:none),(max-width:960px){.nav{display:none}}
 .kicker{text-transform:uppercase;letter-spacing:.14em;font-size:15px;font-weight:700;color:var(--accent);margin-bottom:16px}
 h1{font-size:clamp(40px,8vw,88px);line-height:1.02;letter-spacing:-.035em;margin:0 0 24px;font-weight:900;text-wrap:balance}
@@ -470,7 +480,7 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 @media (max-width:560px){.rows.wide .row{grid-template-columns:96px 1fr 44px;font-size:16px}.repos li{grid-template-columns:32px 1fr}.meta{grid-column:2;text-align:left}
   .moments{grid-template-columns:1fr}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}}
 @media (prefers-reduced-motion:reduce){.slide,.slide.past{transform:none;transition:opacity .2s,visibility 0s}.reveal{opacity:1;transform:none;transition:none}
-  .arrow,.in .heat i,.in .hours i,.in .row b i,.in .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}}
+  .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.in .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}}
 `;
 
 const SCRIPT = `
@@ -594,4 +604,133 @@ const actions = {
   },
 };
 document.querySelectorAll('[data-action]').forEach((b) => b.addEventListener('click', () => actions[b.dataset.action](b)));
+
+// Background music, synthesised live with Web Audio: no audio files, nothing to license.
+// A mellow loop, two bars per chord: Am9, Fmaj7, Cmaj7, G6.
+const Music = (() => {
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return null;
+  const BPM = 84, EIGHTH = 60 / BPM / 2;
+  const CHORDS = [[57, 60, 64, 67, 71], [53, 57, 60, 64, 69], [48, 52, 55, 59, 64], [55, 59, 62, 64, 67]];
+  const ARP = [0, 2, 4, 3, 1, 2, 4, 3];
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  let ctx = null, master = null, out = null, noise = null, timer = 0, stopTimer = 0, step = 0, next = 0, on = false;
+
+  function note(m, t, dur, type, level, cutoff) {
+    const o = ctx.createOscillator(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    o.type = type;
+    o.frequency.value = hz(m);
+    f.type = 'lowpass';
+    f.frequency.value = cutoff;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(level, t + Math.min(0.08, dur / 4));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(f).connect(g).connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+  function kick(t) {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.frequency.setValueAtTime(110, t);
+    o.frequency.exponentialRampToValueAtTime(40, t + 0.18);
+    g.gain.setValueAtTime(0.32, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+    o.connect(g).connect(out);
+    o.start(t);
+    o.stop(t + 0.32);
+  }
+  function hat(t) {
+    const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+    s.buffer = noise;
+    f.type = 'highpass';
+    f.frequency.value = 7000;
+    g.gain.setValueAtTime(0.025, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+    s.connect(f).connect(g).connect(out);
+    s.start(t);
+    s.stop(t + 0.06);
+  }
+  function play(i, t) {
+    const chord = CHORDS[Math.floor(i / 16) % CHORDS.length], s = i % 16;
+    if (s === 0) chord.slice(0, 4).forEach((m) => note(m, t, EIGHTH * 16, 'triangle', 0.035, 900));
+    if (s === 0 || s === 8) note(chord[0] - 24, t, EIGHTH * 6, 'sine', 0.18, 400);
+    if (s % 2 === 0) note(chord[ARP[(s / 2) % ARP.length]] + 12, t, EIGHTH * 1.6, 'sine', 0.045, 2400);
+    if (s % 8 === 0) kick(t);
+    if (s % 2 === 1) hat(t);
+  }
+  function tick() {
+    while (next < ctx.currentTime + 0.25) {
+      play(step++, next);
+      next += EIGHTH;
+    }
+  }
+  function setup() {
+    ctx = new AC();
+    master = ctx.createGain();
+    master.gain.value = 0;
+    out = ctx.createGain();
+    // A short synthetic reverb tail for warmth.
+    const verb = ctx.createConvolver(), wet = ctx.createGain(), len = Math.floor(ctx.sampleRate * 2.2);
+    const ir = ctx.createBuffer(2, len, ctx.sampleRate);
+    for (let c = 0; c < 2; c++) {
+      const d = ir.getChannelData(c);
+      for (let k = 0; k < len; k++) d[k] = (Math.random() * 2 - 1) * Math.pow(1 - k / len, 3);
+    }
+    verb.buffer = ir;
+    wet.gain.value = 0.35;
+    out.connect(master);
+    out.connect(verb);
+    verb.connect(wet).connect(master);
+    master.connect(ctx.destination);
+    noise = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.1), ctx.sampleRate);
+    const d = noise.getChannelData(0);
+    for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+  }
+  return {
+    get on() { return on; },
+    start() {
+      if (!ctx) setup();
+      clearTimeout(stopTimer);
+      ctx.resume();
+      next = ctx.currentTime + 0.1;
+      clearInterval(timer);
+      timer = setInterval(tick, 60);
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 1.5);
+      on = true;
+    },
+    stop() {
+      if (!ctx) return;
+      master.gain.cancelScheduledValues(ctx.currentTime);
+      master.gain.setValueAtTime(master.gain.value, ctx.currentTime);
+      master.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+      stopTimer = setTimeout(() => { clearInterval(timer); ctx.suspend(); }, 450);
+      on = false;
+    },
+  };
+})();
+
+const musicButton = document.querySelector('.music');
+if (Music) {
+  musicButton.hidden = false;
+  let wanted = true;
+  try { wanted = localStorage.getItem('commitale-music') !== 'off'; } catch {}
+  const setMusic = (play) => {
+    if (play) Music.start(); else Music.stop();
+    musicButton.classList.toggle('on', play);
+    musicButton.setAttribute('aria-pressed', String(play));
+  };
+  musicButton.addEventListener('click', () => {
+    const play = !Music.on;
+    setMusic(play);
+    try { localStorage.setItem('commitale-music', play ? 'on' : 'off'); } catch {}
+  });
+  // Browsers only allow sound after a gesture, so the music starts on the first tap or key.
+  const firstGesture = (e) => {
+    ['pointerdown', 'keydown'].forEach((type) => removeEventListener(type, firstGesture, true));
+    if (wanted && !Music.on && !(e.target.closest && e.target.closest('.music'))) setMusic(true);
+  };
+  ['pointerdown', 'keydown'].forEach((type) => addEventListener(type, firstGesture, true));
+}
 `;

@@ -69,12 +69,12 @@ test('no logs, or none from that year, means no AI page', () => {
   assert.equal(readAiUsage({ year: 2024, sources: sources() }), undefined);
 });
 
-test('AI style comes from tokens per commit', () => {
+test('AI style comes from the year total tokens', () => {
   const w = (tokens: number, commits = 100) => ({ commits, ai: { tokens } }) as unknown as Wrapped;
-  assert.equal(aiStyle(w(50_000_000)), 'spotChecker'); // 0.5M per commit
-  assert.equal(aiStyle(w(100_000_000)), 'pairProgrammer'); // 1M
-  assert.equal(aiStyle(w(1_000_000_000)), 'navigator'); // 10M
-  assert.equal(aiStyle(w(5_000_000_000)), 'delegator'); // 50M
-  assert.equal(aiStyle(w(9_000_000_000)), 'vibeCoder'); // 90M
+  assert.equal(aiStyle(w(300_000_000)), 'spotChecker');
+  assert.equal(aiStyle(w(500_000_000)), 'pairProgrammer');
+  assert.equal(aiStyle(w(5_000_000_000)), 'navigator');
+  assert.equal(aiStyle(w(20_000_000_000)), 'delegator');
+  assert.equal(aiStyle(w(40_000_000_000)), 'vibeCoder');
   assert.equal(aiStyle({ commits: 100 } as unknown as Wrapped), undefined);
 });
