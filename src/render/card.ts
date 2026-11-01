@@ -79,10 +79,17 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   const prev = w.previous;
 
   // AI tokens make a better boast than active days, so they take that slot when present.
-  const styleId = aiStyle(w);
   const third = w.ai
-    ? { value: t.tokens(w.ai.tokens), label: styleId ? `${t.cardTokens} · ${t.aiStyles[styleId].short}` : t.cardTokens, delta: undefined, base: undefined }
+    ? { value: t.tokens(w.ai.tokens), label: t.cardTokens, delta: change(w.ai.tokens, w.ai.previous?.tokens), base: w.ai.previous }
     : { value: fmt(w.activeDays), label: t.cardDays, delta: change(w.activeDays, prev?.activeDays), base: prev };
+
+  // The AI style stands beside the personality as an equal, not as a footnote.
+  const styleId = aiStyle(w);
+  const badges: Badge[] = [{ emoji: persona.emoji, label: t.youAre, name: persona.name, desc: persona.desc(w) }];
+  if (styleId) {
+    const s = t.aiStyles[styleId];
+    badges.push({ emoji: s.emoji, label: t.aiStyleIntro, name: s.name, desc: s.desc });
+  }
   const tiles = [
     { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits), base: prev },
     { value: compact(w.added), label: t.cardAdded, delta: change(w.added, prev?.added), base: prev },
@@ -135,7 +142,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide'):
   <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
   <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="800" fill="#fff">${esc(t.cardTitle(w.year))}</text>
   <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
-  ${personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name, persona.desc(w))}
+  ${badges.length === 1 ? personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, theme.accent, badges[0], badges[1])}
   ${tiles}
   ${heat}
   ${languages(w, t, L, theme.accent, format)}
@@ -161,6 +168,52 @@ function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, 
   <text x="${textX}" y="${top + P.label}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
   <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="800" fill="#fff">${esc(name)}</text>
   ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
+}
+
+interface Badge {
+  emoji: string;
+  label: string;
+  name: string;
+  desc: string;
+}
+
+/**
+ * The personality and the AI style as two equal badges in the persona area:
+ * stacked on the wide card, side by side on square and story.
+ */
+function badgePair(L: Layout, format: CardFormat, accent: string, a: Badge, b: Badge): string {
+  const P = L.persona;
+  if (format === 'wide') {
+    const h = 68, gap = 8, y0 = P.y - 12;
+    return [a, b].map((x, i) => rowBadge(P.x, y0 + i * (h + gap), P.w, h, x, { emoji: 40, label: 12, name: 22 }, accent)).join('\n  ');
+  }
+  const gap = 24, w = (P.w - gap) / 2;
+  if (format === 'square') {
+    return [a, b].map((x, i) => rowBadge(P.x + i * (w + gap), P.y, w, P.h, x, { emoji: 56, label: 15, name: 28 }, accent)).join('\n  ');
+  }
+  return [a, b].map((x, i) => columnBadge(P.x + i * (w + gap), P.y, w, P.h, x, accent)).join('\n  ');
+}
+
+/** Emoji on the left, label and name beside it. */
+function rowBadge(x: number, y: number, w: number, h: number, b: Badge, size: { emoji: number; label: number; name: number }, accent: string): string {
+  const textX = x + size.emoji * 2;
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(Math.min(h, 120) / 5)}" fill="#fff" fill-opacity="0.08"/>
+  <text x="${x + Math.round(size.emoji / 2)}" y="${y + Math.round(h / 2 + size.emoji * 0.36)}" font-size="${size.emoji}">${b.emoji}</text>
+  <text x="${textX}" y="${y + Math.round(h / 2 - size.name * 0.3)}" font-size="${size.label}" font-weight="700" letter-spacing="${size.label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
+  <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="800" fill="#fff">${esc(b.name)}</text>`;
+}
+
+/** Emoji on top, then label, name and a two-line description: for the tall story card. */
+function columnBadge(x: number, y: number, w: number, h: number, b: Badge, accent: string): string {
+  const emoji = 88, label = 22, name = 34, desc = 22, pad = 28;
+  const labelY = y + pad + emoji + 34;
+  const nameY = labelY + Math.round(name * 1.3);
+  const lines = wrap(b.desc, Math.floor((w - 2 * pad) / (desc * 0.52)), 2);
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#fff" fill-opacity="0.08"/>
+  <text x="${x + pad}" y="${y + pad + Math.round(emoji * 0.9)}" font-size="${emoji}">${b.emoji}</text>
+  <text x="${x + pad}" y="${labelY}" font-size="${label}" font-weight="700" letter-spacing="${label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
+  <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="800" fill="#fff">${esc(b.name)}</text>
+  ${lines.map((line, i) => `<text x="${x + pad}" y="${nameY + Math.round(desc * 1.5 * (i + 1))}" font-size="${desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 
 /**

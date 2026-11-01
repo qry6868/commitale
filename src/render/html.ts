@@ -336,6 +336,8 @@ function persona(w: Wrapped, t: Strings): string {
     [t.streak, t.days(w.longestStreak.days)],
   ];
   if (w.languages[0]) stats.push([t.topLanguages, w.languages[0].name]);
+  const styleId = aiStyle(w);
+  if (styleId) stats.unshift([t.aiStyleIntro, `${t.aiStyles[styleId].emoji} ${t.aiStyles[styleId].name}`]);
   const badges = others.length
     ? `<div class="badges" ${reveal(5)}><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
     : '';

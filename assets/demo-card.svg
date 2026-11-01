@@ -16,10 +16,14 @@
   <text x="64" y="96" font-size="16" font-weight="700" letter-spacing="3.2" fill="#93c5fd">COMMITALE · 2026</text>
   <text x="64" y="156" font-size="50" font-weight="800" fill="#fff">My 2026 in code</text>
   <text x="64" y="200" font-size="24" fill="#fff" fill-opacity="0.7">Alex Chen</text>
-  <rect x="744" y="70" width="392" height="120" rx="24" fill="#fff" fill-opacity="0.08"/>
-  <text x="772" y="150" font-size="56">🦉</text>
-  <text x="856" y="122" font-size="15" font-weight="700" letter-spacing="1.5" fill="#93c5fd">YOU ARE</text>
-  <text x="856" y="150" font-size="26" font-weight="800" fill="#fff">The Night Owl</text>
+  <rect x="744" y="58" width="392" height="68" rx="14" fill="#fff" fill-opacity="0.08"/>
+  <text x="764" y="106" font-size="40">🦉</text>
+  <text x="824" y="85" font-size="12" font-weight="700" letter-spacing="1.2" fill="#93c5fd">YOU ARE</text>
+  <text x="824" y="109" font-size="22" font-weight="800" fill="#fff">The Night Owl</text>
+  <rect x="744" y="134" width="392" height="68" rx="14" fill="#fff" fill-opacity="0.08"/>
+  <text x="764" y="182" font-size="40">🤝</text>
+  <text x="824" y="161" font-size="12" font-weight="700" letter-spacing="1.2" fill="#93c5fd">YOUR AI STYLE</text>
+  <text x="824" y="185" font-size="22" font-weight="800" fill="#fff">The Pair Programmer</text>
   <rect x="64" y="248" width="250" height="132" rx="20" fill="#fff" fill-opacity="0.07"/>
   <text x="291" y="359" font-size="14" font-weight="700" text-anchor="end" fill="#86efac">+6% YoY</text>
   <text x="87" y="325" font-size="52" font-weight="800" fill="#fff">653</text>
@@ -29,9 +33,9 @@
   <text x="361" y="325" font-size="52" font-weight="800" fill="#fff">22k</text>
   <text x="361" y="359" font-size="18" fill="#fff" fill-opacity="0.66">lines added</text>
   <rect x="612" y="248" width="250" height="132" rx="20" fill="#fff" fill-opacity="0.07"/>
-  
+  <text x="839" y="359" font-size="14" font-weight="700" text-anchor="end" fill="#86efac">+120% YoY</text>
   <text x="635" y="325" font-size="52" font-weight="800" fill="#fff">674M</text>
-  <text x="635" y="359" font-size="18" fill="#fff" fill-opacity="0.66">AI tokens · Pair Coder</text>
+  <text x="635" y="359" font-size="18" fill="#fff" fill-opacity="0.66">AI tokens</text>
   <rect x="886" y="248" width="250" height="132" rx="20" fill="#fff" fill-opacity="0.07"/>
   <text x="1113" y="359" font-size="14" font-weight="700" text-anchor="end" fill="#86efac">+0% YoY</text>
   <text x="909" y="325" font-size="52" font-weight="800" fill="#fff">41</text>

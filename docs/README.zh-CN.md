@@ -13,7 +13,7 @@
 
 [English](../README.md) · 简体中文
 
-<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、6.7 亿 AI token（结对搭档）、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子。" width="760">
+<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、6.7 亿 AI token、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子；AI 搭档类型：结对搭档。" width="760">
 
 </div>
 

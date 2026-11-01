@@ -13,7 +13,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 
 English · [简体中文](docs/README.zh-CN.md)
 
-<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens (Pair Coder), a 41-day streak, a commit heatmap and top languages. Persona: The Night Owl." width="760">
+<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens, a 41-day streak, a commit heatmap and top languages. Personality: The Night Owl. AI style: The Pair Programmer." width="760">
 
 </div>
 
