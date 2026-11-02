@@ -46,6 +46,7 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Moments.** Your first commit of the year, your latest-night commit (yes, that 3:47 AM one) and your biggest.
 - **Languages and repos.** Where your time actually went.
 - **Your words.** The words you reach for most in commit messages, and how many commits were fixes.
+- **Things you might not have noticed.** The quirks of your year: commits after 6 PM on a Friday, fixes in a row, reverts, your longest session, commits on holidays.
 - **Your AI year.** The tokens you spent with Claude Code and Codex, how many sessions and days, your top models, your biggest AI day, and your [AI style](#ai-styles).
 - **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
 - **A soundtrack.** A mellow lo-fi loop, synthesised live in your browser (no audio files), starts on your first tap. The button in the corner turns it off.

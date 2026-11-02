@@ -1,6 +1,6 @@
 import { compact, fmt, pct } from './format.ts';
 import type { AiStyleId } from './ai.ts';
-import type { CommitType, PersonaId, Wrapped } from './stats.ts';
+import type { CommitType, FunFact, Holiday, PersonaId, Wrapped } from './stats.ts';
 
 export type Lang = 'en' | 'zh';
 
@@ -47,6 +47,10 @@ export interface Strings {
   wordsTitle: string;
   fixes: (n: number, pct: number) => string;
   avgLen: (n: number) => string;
+  funTitle: string;
+  /** A fun fact as a big headline and the line under it. */
+  fun: (f: FunFact) => { big: string; line: string };
+  holidays: Record<Holiday, string>;
   personaIntro: string;
   alsoYou: string;
   shareTitle: string;
@@ -150,7 +154,7 @@ const en: Strings = {
   date: (d) => `${EN_MONTHS[Number(d.slice(5, 7)) - 1]} ${Number(d.slice(8, 10))}`,
   hour: (h) => `${h % 12 || 12} ${h < 12 ? 'AM' : 'PM'}`,
 
-  hello: (name, year) => `${name}, here's your ${year} in code`,
+  hello: (name, year) => `${name}, here's your ${year} coding recap`,
   scroll: 'Tap or press → to begin',
   commitsLabel: 'commits',
   commitsSub: (repos, days) => `across ${fmt(repos)} ${repos === 1 ? 'repo' : 'repos'}, on ${fmt(days)} different days`,
@@ -180,6 +184,24 @@ const en: Strings = {
   wordsTitle: 'In your own words',
   fixes: (n, p) => `${fmt(n)} commits (${p}%) were fixes.`,
   avgLen: (n) => `Your average commit message is ${n} characters long.`,
+  funTitle: 'Things you might not have noticed',
+  fun: (f) => {
+    switch (f.id) {
+      case 'fridayNight': return { big: fmt(f.n), line: 'commits after 6 PM on a Friday. Bold.' };
+      case 'reverts': return { big: fmt(f.n), line: 'reverts. Some code was written to be taken back.' };
+      case 'typos': return { big: fmt(f.n), line: 'commits just to fix typos.' };
+      case 'wip': return { big: fmt(f.n), line: 'commits called "wip". Still in progress?' };
+      case 'tiny': return { big: fmt(f.n), line: 'commit messages of three characters or fewer. Concise.' };
+      case 'fixStreak': return { big: fmt(f.n), line: `fixes in a row on ${en.date(f.date)}. The first one didn't take.` };
+      case 'session': return { big: `${Math.floor(f.n / 60)}h ${f.n % 60}m`, line: `your longest session, on ${en.date(f.date)}: ${fmt(f.commits)} commits without a real break.` };
+      case 'holiday': return { big: fmt(f.n), line: `${f.n === 1 ? 'commit' : 'commits'} on ${en.holidays[f.holiday]}. Hope it was worth it.` };
+      case 'emoji': return { big: f.emoji, line: `your favourite commit emoji, used ${fmt(f.n)} times.` };
+    }
+  },
+  holidays: {
+    newYear: "New Year's Day", valentine: "Valentine's Day", aprilFools: "April Fools' Day", halloween: 'Halloween',
+    christmasEve: 'Christmas Eve', christmas: 'Christmas Day', newYearsEve: "New Year's Eve",
+  },
   personaIntro: 'Your coding personality is…',
   alsoYou: 'Also spotted:',
   shareTitle: 'Share your year',
@@ -192,7 +214,7 @@ const en: Strings = {
   footer: 'Generated locally by Commitale. Nothing left your machine.',
   shareText: (w) => {
     const p = en.personas[w.personas[0]];
-    return `My ${w.year} in code: ${fmt(w.commits)} commits, +${compact(w.added)} lines, ` +
+    return `My ${w.year} coding recap: ${fmt(w.commits)} commits, +${compact(w.added)} lines, ` +
       `a ${w.longestStreak.days}-day streak. I'm ${p.emoji} ${p.name}. Get yours: npx commitale`;
   },
 
@@ -331,7 +353,7 @@ const zh: Strings = {
   date: (d) => `${Number(d.slice(5, 7))}月${Number(d.slice(8, 10))}日`,
   hour: (h) => `${h}:00`,
 
-  hello: (name, year) => `${name}，这是你的 ${year} 编码年度报告`,
+  hello: (name, year) => `${name}，这是你的 ${year} Coding 年度报告`,
   scroll: '点击或按 → 开始',
   commitsLabel: '次提交',
   commitsSub: (repos, days) => `分布在 ${fmt(repos)} 个仓库，共 ${fmt(days)} 天`,
@@ -361,6 +383,24 @@ const zh: Strings = {
   wordsTitle: '你的提交信息',
   fixes: (n, p) => `${fmt(n)} 次提交（${p}%）是在修 bug。`,
   avgLen: (n) => `你的提交信息平均 ${n} 个字符。`,
+  funTitle: '你可能没注意到的',
+  fun: (f) => {
+    switch (f.id) {
+      case 'fridayNight': return { big: fmt(f.n), line: '次提交发生在周五下班后。勇气可嘉。' };
+      case 'reverts': return { big: fmt(f.n), line: '次回滚。有些代码，写出来就是为了撤回。' };
+      case 'typos': return { big: fmt(f.n), line: '次提交只为修错别字。' };
+      case 'wip': return { big: fmt(f.n), line: '次提交叫 wip。现在做完了吗？' };
+      case 'tiny': return { big: fmt(f.n), line: '条提交信息不超过三个字。言简意赅。' };
+      case 'fixStreak': return { big: fmt(f.n), line: `次连续 fix（${zh.date(f.date)}）。第一次没修好。` };
+      case 'session': return { big: `${Math.floor(f.n / 60)}小时${f.n % 60}分`, line: `最长的一次连续 Coding（${zh.date(f.date)}），${fmt(f.commits)} 次提交几乎没停。` };
+      case 'holiday': return { big: fmt(f.n), line: `次提交发生在${zh.holidays[f.holiday]}。希望值得。` };
+      case 'emoji': return { big: f.emoji, line: `你最爱用的提交 emoji，用了 ${fmt(f.n)} 次。` };
+    }
+  },
+  holidays: {
+    newYear: '元旦', valentine: '情人节', aprilFools: '愚人节', halloween: '万圣节',
+    christmasEve: '平安夜', christmas: '圣诞节', newYearsEve: '跨年夜',
+  },
   personaIntro: '你的编程人格是……',
   alsoYou: '你还是：',
   shareTitle: '分享你的年度报告',
@@ -373,7 +413,7 @@ const zh: Strings = {
   footer: '由 Commitale 在本地生成，数据没有离开你的电脑。',
   shareText: (w) => {
     const p = zh.personas[w.personas[0]];
-    return `我的 ${w.year} 编码年度报告：${fmt(w.commits)} 次提交，新增 ${compact(w.added)} 行代码，` +
+    return `我的 ${w.year} Coding 年度报告：${fmt(w.commits)} 次提交，新增 ${compact(w.added)} 行代码，` +
       `最长连续 ${w.longestStreak.days} 天。我是 ${p.emoji} ${p.name}！生成你的：npx commitale`;
   },
 

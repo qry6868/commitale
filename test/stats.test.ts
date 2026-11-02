@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { calendar, compact, heatLevels, onDark } from '../src/format.ts';
 import { isGenerated, languageOf } from '../src/languages.ts';
-import { computeStats, streak } from '../src/stats.ts';
+import { strings } from '../src/i18n.ts';
+import { computeStats, funFacts, streak, type FunFact } from '../src/stats.ts';
 import type { Commit, FileChange } from '../src/types.ts';
 
 let seq = 0;
@@ -121,4 +122,50 @@ test('format helpers', () => {
   assert.equal(level(0), 0);
   assert.equal(level(1), 1);
   assert.equal(level(40), 4);
+});
+
+test('fun facts pick out the quirks, most remarkable first', () => {
+  const commits = [
+    // Friday 2 January, after hours.
+    commit('2026-01-02', 19, 'feat: a'), commit('2026-01-02', 20, 'feat: b'), commit('2026-01-02', 21, 'feat: c'),
+    // Three fixes in a row, then something else before the reverts.
+    commit('2026-03-03', 10, 'fix: x'), commit('2026-03-03', 11, 'fix: x again'), commit('2026-03-03', 12, 'fix: x for real'),
+    commit('2026-03-04', 10, 'docs: readme'),
+    commit('2026-03-05', 10, 'Revert "feat: a"'), commit('2026-03-06', 10, 'revert the revert'),
+    // A five-hour session: six commits, an hour apart.
+    ...[9, 10, 11, 12, 13, 14].map((h) => commit('2026-04-10', h, `feat: step ${h}`)),
+    commit('2026-12-25', 10, 'chore: deps'),
+  ];
+  const facts = funFacts(commits);
+  assert.equal(facts.length, 4);
+  assert.deepEqual(facts[0], { id: 'session', n: 300, commits: 6, date: '2026-04-10' });
+  assert.deepEqual(facts[1], { id: 'holiday', n: 1, holiday: 'christmas' });
+  assert.deepEqual(facts[2], { id: 'fridayNight', n: 3 });
+  assert.ok(!facts.some((f) => f.id === 'typos'), 'no typo fixes, no typo fact');
+  assert.deepEqual(
+    funFacts(commits, 10).find((f) => f.id === 'fixStreak'),
+    { id: 'fixStreak', n: 3, date: '2026-03-03' },
+  );
+  assert.equal(funFacts(commits, 10).find((f) => f.id === 'reverts')?.n, 2);
+});
+
+test('a quiet year has no fun facts rather than forced ones', () => {
+  assert.deepEqual(funFacts([commit('2026-02-03', 10, 'feat: add search'), commit('2026-02-10', 11, 'fix: search paging')]), []);
+});
+
+test('every fun fact reads well in both languages', () => {
+  const facts: FunFact[] = [
+    { id: 'fridayNight', n: 3 }, { id: 'reverts', n: 2 }, { id: 'typos', n: 4 }, { id: 'wip', n: 5 }, { id: 'tiny', n: 6 },
+    { id: 'fixStreak', n: 4, date: '2026-03-03' }, { id: 'session', n: 578, commits: 23, date: '2026-03-02' },
+    { id: 'holiday', n: 1, holiday: 'newYearsEve' }, { id: 'emoji', n: 9, emoji: '🐛' },
+  ];
+  for (const lang of ['en', 'zh'] as const) {
+    for (const f of facts) {
+      const { big, line } = strings(lang).fun(f);
+      assert.ok(big && line, `${lang} ${f.id}`);
+      assert.doesNotMatch(big + line, /undefined|NaN/, `${lang} ${f.id}`);
+    }
+  }
+  assert.equal(strings('en').fun({ id: 'session', n: 578, commits: 23, date: '2026-03-02' }).big, '9h 38m');
+  assert.equal(strings('zh').fun({ id: 'session', n: 578, commits: 23, date: '2026-03-02' }).big, '9小时38分');
 });

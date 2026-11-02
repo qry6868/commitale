@@ -138,6 +138,7 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
   out.push(`<rect width="${panelW}" height="${H}" fill="${c.theme.accent}"/>`);
   // Say outright what this is: a stranger scrolling past should see "a year of code" first.
   out.push(`<text x="${pad}" y="76" font-size="32" font-family="${headline()}" font-weight="800" letter-spacing="1" fill="${dark}">${esc(upper(t.cardTitle(w.year)))}</text>`);
+  out.push(`<text x="${pad}" y="108" font-size="20" font-weight="600" fill="${dark}" fill-opacity="0.7">${esc(ellipsize(w.name, 20, panelW - pad * 2))}</text>`);
   out.push(`<text x="${pad}" y="150" font-size="22" font-weight="800" letter-spacing="3" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.iAm))}</text>`);
   // Capped below the panel's full height so a two-line name, the punchline and the AI
   // style all clear the sticker in the bottom corner.

@@ -53,6 +53,8 @@ export interface Wrapped {
   lastCommit: Moment;
   latestNight?: Moment;
   biggestCommit: Moment & { lines: number };
+  /** The quirkiest things about the year, most remarkable first; empty when nothing stands out. */
+  funFacts: FunFact[];
   personas: PersonaId[];
   /** AI coding tool usage, when Claude Code or Codex logs exist on this machine. */
   ai?: AiStats;
@@ -100,6 +102,79 @@ export function commitType(subject: string): CommitType {
   return KEYWORDS.find(([, re]) => re.test(subject))?.[0] ?? 'other';
 }
 const FIX_RE = /\b(fix(e[sd])?|bug(fix)?|hotfix|patch(e[sd])?)\b|修复|修正|修改bug/i;
+
+export type Holiday = 'newYear' | 'valentine' | 'aprilFools' | 'halloween' | 'christmasEve' | 'christmas' | 'newYearsEve';
+const HOLIDAYS: Record<string, Holiday> = {
+  '01-01': 'newYear', '02-14': 'valentine', '04-01': 'aprilFools', '10-31': 'halloween',
+  '12-24': 'christmasEve', '12-25': 'christmas', '12-31': 'newYearsEve',
+};
+
+/** A quirk worth a line in the report. `n` is the headline number; the rest depends on `id`. */
+export type FunFact =
+  | { id: 'fridayNight' | 'reverts' | 'typos' | 'wip' | 'tiny'; n: number }
+  | { id: 'fixStreak'; n: number; date: string }
+  | { id: 'session'; n: number; commits: number; date: string }
+  | { id: 'holiday'; n: number; holiday: Holiday }
+  | { id: 'emoji'; n: number; emoji: string };
+
+/** Breaks longer than this end a coding session. */
+const SESSION_GAP_MS = 90 * 60_000;
+
+/**
+ * Picks out the year's quirks: Friday-night commits, fix after fix, reverts, marathon
+ * sessions and the like. Each has a bar to clear, and the ones that clear it furthest
+ * come first, so a dull year shows nothing rather than something forced.
+ */
+export function funFacts(commits: Commit[], max = 4): FunFact[] {
+  const sorted = [...commits].sort((a, b) => a.timestamp - b.timestamp);
+  const count = (re: RegExp): number => sorted.filter((c) => re.test(c.subject)).length;
+  const found: { fact: FunFact; score: number }[] = [];
+  const add = (fact: FunFact, bar: number): void => {
+    if (fact.n >= bar) found.push({ fact, score: fact.n / bar });
+  };
+
+  add({ id: 'fridayNight', n: sorted.filter((c) => c.weekday === 5 && c.hour >= 18).length }, 3);
+  add({ id: 'reverts', n: count(/\breverts?\b|\breverted\b|回滚|撤销/i) }, 2);
+  add({ id: 'typos', n: count(/\btypos?\b|错别字|拼写/i) }, 2);
+  add({ id: 'wip', n: count(/\bwip\b/i) }, 3);
+  add({ id: 'tiny', n: sorted.filter((c) => [...c.subject.trim()].length <= 3).length }, 3);
+
+  // The longest run of fixes in a row: the first fix didn't take.
+  let run = 0;
+  let fixRun = { n: 0, date: '' };
+  for (const c of sorted) {
+    run = commitType(c.subject) === 'fix' ? run + 1 : 0;
+    if (run > fixRun.n) fixRun = { n: run, date: c.date };
+  }
+  add({ id: 'fixStreak', ...fixRun }, 3);
+
+  // The longest stretch of commits with no break over 90 minutes.
+  let start = 0;
+  let session = { minutes: 0, commits: 0, date: '' };
+  for (let i = 1; i <= sorted.length; i++) {
+    if (i < sorted.length && sorted[i].timestamp - sorted[i - 1].timestamp <= SESSION_GAP_MS) continue;
+    const minutes = Math.round((sorted[i - 1].timestamp - sorted[start].timestamp) / 60_000);
+    if (i - start >= 4 && minutes > session.minutes) session = { minutes, commits: i - start, date: sorted[start].date };
+    start = i;
+  }
+  add({ id: 'session', n: session.minutes, commits: session.commits, date: session.date }, 180);
+
+  // Holidays always make the cut, the busiest one only.
+  const holidays = new Map<Holiday, number>();
+  for (const c of sorted) {
+    const holiday = HOLIDAYS[c.date.slice(5)];
+    if (holiday) holidays.set(holiday, (holidays.get(holiday) ?? 0) + 1);
+  }
+  const [holiday, n] = [...holidays].sort((a, b) => b[1] - a[1])[0] ?? [];
+  if (holiday && n) found.push({ fact: { id: 'holiday', n, holiday }, score: 1.5 + n / 10 });
+
+  const emojis = new Map<string, number>();
+  for (const c of sorted) for (const [e] of c.subject.matchAll(/\p{Extended_Pictographic}/gu)) emojis.set(e, (emojis.get(e) ?? 0) + 1);
+  const [emoji, uses] = [...emojis].sort((a, b) => b[1] - a[1])[0] ?? [];
+  if (emoji && uses) add({ id: 'emoji', n: uses, emoji }, 5);
+
+  return found.sort((a, b) => b.score - a.score).slice(0, max).map((f) => f.fact);
+}
 
 export interface StatsOptions {
   year: number;
@@ -244,6 +319,7 @@ export function computeStats(input: Commit[], opts: StatsOptions): Wrapped {
     lastCommit: moment(commits[n - 1]),
     latestNight: latestNight && moment(latestNight.commit),
     biggestCommit: { ...moment(biggest.commit), lines: biggest.lines },
+    funFacts: funFacts(commits),
     personas: [],
   };
 

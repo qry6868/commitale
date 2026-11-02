@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- New page, **Things you might not have noticed**: the quirks of your year, such as commits after 6 PM on a Friday, fixes in a row, reverts, your longest session and commits on holidays. Only the ones that stand out are shown.
+- Every page fits on one screen on small phones (360×640 and up).
+- The wide poster shows your name.
+- The report and share text say "coding recap" / "Coding 年度报告", matching the posters.
+
 ## 0.3.0
 
 **[See it live](https://qry6868.github.io/commitale/)**: a full report on sample data, nothing to install.

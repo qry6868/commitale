@@ -26,8 +26,9 @@ const badge = (page: (typeof PAGES)[number]): string => `
 .demo-badge a{color:inherit;text-decoration:none}
 .demo-badge code{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.14)}
 .demo-badge .sep{opacity:.35}
-/* On phones the slides run to the bottom edge; the top-left corner is the free spot. */
-@media (max-width:640px){.demo-badge{top:30px;bottom:auto;left:16px;transform:none;padding:6px 12px;font-size:12px}.demo-badge .note{display:none}}
+/* Phone pages use the whole screen, so the badge shows on the opening page only, in its free top corner. */
+@media (max-width:640px){.demo-badge{display:none;top:30px;bottom:auto;left:16px;transform:none;padding:6px 12px;font-size:12px}.demo-badge .note{display:none}
+  .slide:first-of-type.active ~ .demo-badge{display:flex}}
 </style>
 <div class="demo-badge"><span class="note">${page.note}</span><a href="${REPO}"><code>npx commitale</code> ↗</a><span class="sep">|</span><a href="${page.other.href}" lang="${page.lang === 'en' ? 'zh' : 'en'}">${page.other.label}</a></div>
 `;

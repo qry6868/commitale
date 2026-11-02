@@ -11,6 +11,7 @@
     <rect width="1200" height="630" fill="url(#poster-wide-bg)"/>
     <rect width="500" height="630" fill="#93c5fd"/>
     <text x="52" y="76" font-size="32" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" letter-spacing="1" fill="#0b1026">MY 2026 CODING RECAP</text>
+    <text x="52" y="108" font-size="20" font-weight="600" fill="#0b1026" fill-opacity="0.7">Alex Chen</text>
     <text x="52" y="150" font-size="22" font-weight="800" letter-spacing="3" fill="#0b1026" fill-opacity="0.75">WHEN CODING, I&#39;M</text>
     <text x="52" y="266" font-size="100" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#0b1026">THE NIGHT</text>
     <text x="52" y="364" font-size="100" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#0b1026">OWL</text>
@@ -49,7 +50,7 @@
     <text x="1152" y="353" font-size="22" fill="#fff" fill-opacity="0.55" text-anchor="end">13%</text>
     <text x="544" y="500" font-size="56" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#fff">653</text>
     <text x="544" y="529" font-size="16" fill="#fff" fill-opacity="0.66">commits</text>
-    <text x="747" y="500" font-size="56" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#fff">674M</text>
+    <text x="747" y="500" font-size="56" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#fff">676.7M</text>
     <text x="747" y="529" font-size="16" fill="#fff" fill-opacity="0.66">AI coding tokens</text>
     <text x="949" y="500" font-size="56" font-family="'Commitale Headline', 'Commitale Display', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', Helvetica, Arial, sans-serif" font-weight="800" fill="#fff">41</text>
     <text x="949" y="529" font-size="16" fill="#fff" fill-opacity="0.66">day coding streak</text>

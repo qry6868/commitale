@@ -1,7 +1,7 @@
 import { calendar, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type CommitType, type Moment, type Wrapped } from '../stats.ts';
+import { change, type CommitType, type FunFact, type Holiday, type Moment, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
@@ -44,6 +44,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
     { body: languages(w, t) },
     { body: repos(w, t) },
     { body: words(w, t) },
+    { body: fun(w, t) },
     { body: persona(w, t), colors: theme.glow },
     { body: share(w, t, cards), colors: theme.glow },
   ].filter((s) => Boolean(s.body));
@@ -298,6 +299,25 @@ function words(w: Wrapped, t: Strings): string {
 </div>`;
 }
 
+const FUN_ICONS: Record<Exclude<FunFact['id'], 'holiday' | 'emoji'> | Holiday, string> = {
+  fridayNight: '🍻', reverts: '⏪', typos: '✏️', wip: '🚧', tiny: '🤏', fixStreak: '🔁', session: '⏱️',
+  newYear: '🎆', valentine: '💘', aprilFools: '🃏', halloween: '🎃', christmasEve: '🎄', christmas: '🎄', newYearsEve: '🥂',
+};
+
+/** The year's quirks, each a big number and a wry line. Left out when fewer than two stand out. */
+function fun(w: Wrapped, t: Strings): string {
+  if (w.funFacts.length < 2) return '';
+  const cards = w.funFacts
+    .map((f, i) => {
+      const { big, line } = t.fun(f);
+      // The emoji fact's headline is already an emoji.
+      const icon = f.id === 'emoji' ? '' : FUN_ICONS[f.id === 'holiday' ? f.holiday : f.id];
+      return `<div class="quirk" ${reveal(i + 1)}>${icon ? `<span class="icon" aria-hidden="true">${icon}</span>` : ''}<div class="quirk-big${[...big].length > 5 ? ' long' : ''}">${esc(big)}</div><p>${esc(line)}</p></div>`;
+    })
+    .join('');
+  return `<div class="kicker" ${reveal(0)}>${esc(t.funTitle)}</div><div class="quirks">${cards}</div>`;
+}
+
 /** Two pages: the headline number with your AI style, then where the tokens went. */
 function ai(w: Wrapped, t: Strings): string[] {
   const a = w.ai;
@@ -544,10 +564,25 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 .share{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden;max-width:420px}
 .share i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--g1),var(--g2));transform-origin:left}
 .in .share i{animation:fill .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:.4s}
+.quirks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.quirk{position:relative;padding:26px 28px;border-radius:24px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1)}
+.quirk .icon{position:absolute;top:20px;right:22px;font-size:30px}
+.quirk-big{font-family:var(--display);font-size:clamp(40px,6vw,76px);font-weight:900;line-height:1;letter-spacing:-.03em;color:var(--accent)}
+.quirk-big.long{font-size:clamp(30px,4vw,52px);padding-right:40px}
+.quirk p{margin:12px 0 0;font-size:clamp(15px,1.9vw,20px);line-height:1.4;color:var(--muted);text-wrap:pretty}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0)*120ms)}
 .in .reveal{opacity:1;transform:none}
 @media (max-width:560px){.rows.wide .row{grid-template-columns:96px 1fr 44px;font-size:16px}.repos li{grid-template-columns:32px 1fr}.meta{grid-column:2;text-align:left}
-  .moments{grid-template-columns:1fr}.stats{gap:12px 24px;margin-top:18px}.summary-actions .buttons{margin:4px 0 12px}.summary-actions .footer{display:none}.chip{padding:4px 11px}.chips{gap:8px 10px;margin-bottom:12px}.row.type{font-size:14px}.types{gap:6px}.stack{margin-bottom:12px}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}}
+  .moments{grid-template-columns:1fr}.stats{gap:12px 24px;margin-top:18px}.summary-actions .buttons{margin:4px 0 12px}.summary-actions .footer{display:none}.chip{padding:4px 11px}.chips{gap:8px 10px;margin-bottom:12px}.row.type{font-size:14px}.types{gap:6px}.stack{margin-bottom:12px}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}
+  .quirks{gap:10px}.quirk{padding:16px;border-radius:18px}.quirk .icon{top:12px;right:12px;font-size:18px}.quirk-big{font-size:36px}.quirk-big.long{font-size:19px;padding-right:20px;white-space:nowrap}.quirk p{font-size:14px;margin-top:8px}}
+/* Small phones (iPhone SE and the like): every page should fit one screen, no scrolling inside a story. */
+@media (max-width:560px) and (max-height:760px){.slide{padding:48px 16px 24px}.kicker{margin-bottom:10px}h2{margin:2px 0 12px}.split{gap:16px}
+  .hours{height:100px}.ticks{margin:6px 0 10px}.rows{gap:6px}.viz .label{margin-top:8px}
+  .repos{gap:8px}.repos li{padding:10px 14px;gap:4px 12px}.repos .name{font-size:18px;gap:6px}.meta br{display:none}
+  .types{grid-template-columns:1fr 1fr;column-gap:18px}.row.type{grid-template-columns:1fr 40px}.row.type em:first-of-type{display:none}
+  .sub{font-size:16px;margin-top:8px}.chips{margin:4px 0 8px}
+  .moment{padding:10px 14px}blockquote{font-size:15px}
+  .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}}
 @media (prefers-reduced-motion:reduce){.slide,.slide.past{transform:none;transition:opacity .2s,visibility 0s}.reveal{opacity:1;transform:none;transition:none}
   .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.in .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}}
 `;
