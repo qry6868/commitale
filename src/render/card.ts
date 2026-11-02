@@ -1,8 +1,8 @@
 import { calendar, compact, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type PersonaId, type Wrapped } from '../stats.ts';
-import { personaArt } from './art.ts';
+import { change, type Wrapped } from '../stats.ts';
+import { aiArt, personaArt, type Place } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor } from './theme.ts';
 
@@ -98,10 +98,10 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
 
   // The AI style stands beside the personality as an equal, not as a footnote.
   const styleId = aiStyle(w);
-  const badges: Badge[] = [{ icon: artIcon(w.personas[0], `${format}-persona`), label: t.youAre, name: persona.name, desc: persona.desc(w) }];
+  const badges: Badge[] = [{ icon: artIcon((at) => personaArt(w.personas[0], `${format}-persona`, at)), label: t.youAre, name: persona.name, desc: persona.desc(w) }];
   if (styleId) {
     const s = t.aiStyles[styleId];
-    badges.push({ icon: emojiIcon(s.emoji), label: t.aiStyleIntro, name: s.name, desc: s.desc });
+    badges.push({ icon: artIcon((at) => aiArt(styleId, `${format}-ai`, at)), label: t.aiStyleIntro, name: s.name, desc: s.desc });
   }
   const tiles = [
     { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits), base: prev },
@@ -185,11 +185,8 @@ function personaBlock(L: Layout, accent: string, icon: Icon, youAre: string, nam
 
 /** What sits beside a badge's words, drawn with its top-left corner at (x, top). */
 type Icon = (x: number, top: number, size: number) => string;
-/** A personality gets its drawn badge, a touch larger than an emoji would be. */
-const artIcon = (id: PersonaId, key: string): Icon => (x, top, size) =>
-  personaArt(id, key, { size: size * 1.12, x: x - size * 0.06, y: top - size * 0.06 });
-const emojiIcon = (emoji: string): Icon => (x, top, size) =>
-  `<text x="${x}" y="${Math.round(top + size * 0.86)}" font-size="${size}">${emoji}</text>`;
+/** A drawn badge, filling the square an emoji would have. */
+const artIcon = (draw: (at: Place) => string): Icon => (x, top, size) => draw({ size, x, y: top });
 
 interface Badge {
   icon: Icon;

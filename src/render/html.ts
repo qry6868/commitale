@@ -3,7 +3,7 @@ import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
 import { change, type CommitType, type FunFact, type Holiday, type Moment, type PersonaId, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
-import { ART_CSS, personaArt } from './art.ts';
+import { ART_CSS, aiArt, personaArt } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
 
@@ -340,7 +340,7 @@ function ai(w: Wrapped, t: Strings): string[] {
   ${deltaTag(change(a.tokens, a.previous?.tokens), a.previous, t, 2)}
   <p class="sub" ${reveal(2)}>${esc(t.aiSub(a.sessions, a.activeDays))}</p>
 </div>
-${style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${style.emoji}</span><div class="label">${esc(t.aiStyleIntro)}</div><div class="ai-name">${esc(style.name)}</div><p>${esc(style.desc)}</p></div>` : ''}
+${id && style ? `<div class="ai-style" ${reveal(3)}><span class="ai-emoji">${aiArt(id, 'ai-slide')}</span><div class="label">${esc(t.aiStyleIntro)}</div><div class="ai-name">${esc(style.name)}</div><p>${esc(style.desc)}</p></div>` : ''}
 </div>`;
   const models = a.models.length
     ? `<div><div class="viz-title">${esc(t.aiModels)}</div><div class="rows ai">${rows(a.models.slice(0, 3))}</div></div>`
@@ -360,22 +360,23 @@ function persona(w: Wrapped, t: Strings): string {
   const [mainId, ...otherIds] = w.personas;
   const main = t.personas[mainId];
   // A few numbers behind the verdict, so it reads as earned rather than assigned.
-  const stats: [string, string][] = [
+  const stats: [label: string, value: string, icon?: string][] = [
     [t.peakLabel, t.hour(w.peakHour)],
     [t.streak, t.days(w.longestStreak.days)],
   ];
   if (w.languages[0]) stats.push([t.topLanguages, w.languages[0].name]);
   const styleId = aiStyle(w);
-  if (styleId) stats.unshift([t.aiStyleIntro, `${t.aiStyles[styleId].emoji} ${t.aiStyles[styleId].name}`]);
+  if (styleId) stats.unshift([t.aiStyleIntro, t.aiStyles[styleId].name, aiArt(styleId, 'stat-ai')]);
   const badges = otherIds.length
     ? `<div class="badges after" style="--d:3"><span class="label">${esc(t.alsoYou)}</span>${otherIds.map((id) => `<span class="chip">${personaArt(id, `chip-${id}`, { size: 24 })}${esc(t.personas[id].name)}</span>`).join('')}</div>`
     : '';
   // The reveal: every personality's badge spins past like a slot machine, slows, and lands
   // on yours; then a burst, the name letter by letter, and the rest. The script runs the
-  // reel through the faces in `data-reel` order: the others twice, then yours.
+  // reel through the faces in `data-reel` order: the others twice, then yours, which alone
+  // carries your number.
   const rest = (Object.keys(t.personas) as PersonaId[]).filter((id) => id !== mainId);
   const faces = [...rest, mainId]
-    .map((id) => `<div class="face${id === mainId ? ' on' : ''}" data-persona="${id}">${personaArt(id, `reel-${id}`)}</div>`)
+    .map((id) => `<div class="face${id === mainId ? ' on' : ''}" data-persona="${id}">${personaArt(id, `reel-${id}`, {}, id === mainId ? t.figures[id](w) : undefined)}</div>`)
     .join('');
   const order = [...rest.keys(), ...rest.keys(), rest.length];
   let letter = 0;
@@ -389,7 +390,7 @@ function persona(w: Wrapped, t: Strings): string {
 <div class="emoji-wrap"><div class="burst" aria-hidden="true"></div><div class="sparks" aria-hidden="true">${sparks}</div><div class="avatar" data-reel="${JSON.stringify(order)}">${faces}</div></div>
 <h1 class="persona-name" aria-label="${esc(main.name)}"><span aria-hidden="true">${name}</span></h1>
 <p class="sub after" style="--d:1">${esc(main.desc(w))}</p>
-<div class="stats after" style="--d:2">${stats.map(([label, value]) => `<div><div class="label">${esc(label)}</div><div class="fact">${esc(value)}</div></div>`).join('')}</div>
+<div class="stats after" style="--d:2">${stats.map(([label, value, icon]) => `<div><div class="label">${esc(label)}</div><div class="fact">${icon ?? ''}${esc(value)}</div></div>`).join('')}</div>
 ${badges}`;
 }
 
@@ -495,7 +496,8 @@ h2{font-family:var(--display);font-size:clamp(26px,4.6vw,44px);letter-spacing:-.
 .ai-style{padding:28px 30px;border-radius:28px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12)}
 .ai-style .label{margin:0}
 .ai-style p{margin:8px 0 12px;font-size:18px;line-height:1.45}
-.ai-emoji{display:block;font-size:56px;line-height:1;margin-bottom:14px}
+.ai-emoji{display:block;margin-bottom:16px}.ai-emoji .art{display:block;width:72px;height:72px}
+.fact .art{width:1.15em;height:1.15em;vertical-align:-.2em;margin-right:.35em}
 .ai-name{font-family:var(--display);font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:-.02em;margin:4px 0 0}
 .moments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .moment{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:20px;padding:20px 22px}

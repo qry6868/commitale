@@ -1,8 +1,8 @@
-import { aiStyle } from '../ai.ts';
+import { aiStyle, type AiStyleId } from '../ai.ts';
 import { compact, escapeXml as esc, fmt, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import type { PersonaId, Wrapped } from '../stats.ts';
-import { personaArt } from './art.ts';
+import { aiArt, personaArt, type Figure } from './art.ts';
 import { CARD_SIZES, DISPLAY, FONT, type CardFormat, type CardOptions } from './card.ts';
 import { FONT_FACE, HEADLINE_FAMILY } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
@@ -21,9 +21,11 @@ interface Content {
   theme: Theme;
   name: string;
   persona: PersonaId;
+  /** The number on the personality's badge. */
+  figure: Figure;
   /** The fact that earned the personality, e.g. "38% of my commits landed between 10 PM and 5 AM". */
   punchline: string;
-  ai?: { emoji: string; name: string };
+  ai?: { id: AiStyleId; name: string };
   /** No repo names here: plenty of people would rather not post those. */
   lists: { title: string; items: Item[] }[];
   stats: [value: string, label: string][];
@@ -44,8 +46,9 @@ export function renderPoster(w: Wrapped, t: Strings, format: CardFormat = 'wide'
     theme,
     name: CJK.test(persona.name) ? persona.name : persona.name.toUpperCase(),
     persona: w.personas[0],
+    figure: t.figures[w.personas[0]](w),
     punchline: t.punchlines[w.personas[0]](w),
-    ai: styleId ? { emoji: t.aiStyles[styleId].emoji, name: t.aiStyles[styleId].name } : undefined,
+    ai: styleId ? { id: styleId, name: t.aiStyles[styleId].name } : undefined,
     lists: [
       {
         title: t.cardTypes,
@@ -107,7 +110,7 @@ function tall(w: Wrapped, t: Strings, c: Content, id: string, format: 'square' |
     y += story ? 66 : 40;
     out.push(`<text x="${pad}" y="${y}" font-size="${s.aiLabel}" font-weight="700" letter-spacing="${s.aiLabel / 8}" fill="${c.theme.accent}">${esc(t.myAiStyle.toUpperCase())}</text>`);
     y += Math.round(s.aiName * 1.05);
-    out.push(`<text x="${pad}" y="${y}" font-size="${s.aiName}" fill="#fff">${c.ai.emoji}<tspan dx="${Math.round(s.aiName * 0.25)}" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
+    out.push(aiLine(c.ai, `${id}-ai`, pad, y, s.aiName, '#fff'));
   }
 
   // Stats and footer are pinned to the bottom; the lists get the space in between.
@@ -156,10 +159,10 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
     y += 46;
     out.push(`<text x="${pad}" y="${y}" font-size="15" font-weight="800" letter-spacing="2" fill="${dark}" fill-opacity="0.75">${esc(upperLabel(t.myAiStyle))}</text>`);
     y += 42;
-    out.push(`<text x="${pad}" y="${y}" font-size="38" fill="${dark}">${c.ai.emoji}<tspan dx="8" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
+    out.push(aiLine(c.ai, `${id}-ai`, pad, y, 38, dark));
   }
   // Bottom corner: the title runs along the top, and the name and AI style fill the middle.
-  out.push(sticker(c.persona, panelW - 80, H - 80, 84, id));
+  out.push(sticker(c, panelW - 80, H - 80, 84, id));
 
   const x0 = panelW + 44;
   const areaW = W - x0 - 48;
@@ -248,18 +251,26 @@ function verdictPanel(
   const height = y - o.y + Math.round(o.label * 1.6);
   const rect = `<rect x="${o.x}" y="${o.y}" width="${o.width}" height="${height}" fill="${c.theme.accent}"/>`;
   // The badge sits on the block's top edge like a sticker.
-  const stick = sticker(c.persona, o.x + o.width - o.pad - o.sticker * 0.55, o.y, o.sticker, o.id);
+  const stick = sticker(c, o.x + o.width - o.pad - o.sticker * 0.55, o.y, o.sticker, o.id);
   return { svg: [rect, ...parts, stick].join('\n    '), height };
 }
 
 /** The personality's badge in a white ring, tilted like a sticker. */
-function sticker(persona: PersonaId, cx: number, cy: number, size: number, id: string): string {
-  const r = Math.round(size * 0.66);
-  const art = 2 * r - 8;
-  return `<g transform="rotate(-10 ${Math.round(cx)} ${Math.round(cy)})" filter="url(#${id}-shadow)">
-      <circle cx="${Math.round(cx)}" cy="${Math.round(cy)}" r="${r}" fill="#fff"/>
-      ${personaArt(persona, `${id}-sticker`, { size: art, x: cx - art / 2, y: cy - art / 2 })}
+/** The personality's badge with the user's number on it, in a white frame, stuck on at an angle. */
+function sticker(c: Content, cx: number, cy: number, size: number, id: string): string {
+  const frame = Math.round(size * 1.2);
+  const art = frame - Math.round(frame * 0.09);
+  return `<g transform="rotate(-6 ${Math.round(cx)} ${Math.round(cy)})" filter="url(#${id}-shadow)">
+      <rect x="${Math.round(cx - frame / 2)}" y="${Math.round(cy - frame / 2)}" width="${frame}" height="${frame}" rx="${Math.round(frame * 0.16)}" fill="#fff"/>
+      ${personaArt(c.persona, `${id}-sticker`, { size: art, x: cx - art / 2, y: cy - art / 2 }, c.figure)}
     </g>`;
+}
+
+/** The AI style: its badge, then its name in the headline face, sitting on baseline `y`. */
+function aiLine(ai: NonNullable<Content['ai']>, key: string, x: number, y: number, size: number, fill: string): string {
+  const icon = Math.round(size * 1.1);
+  return `${aiArt(ai.id, key, { size: icon, x, y: y - Math.round(icon * 0.84) })}
+    <text x="${x + icon + Math.round(size * 0.3)}" y="${y}" font-size="${size}" font-family="${headline()}" font-weight="800" fill="${fill}">${esc(upper(ai.name))}</text>`;
 }
 
 function topList(

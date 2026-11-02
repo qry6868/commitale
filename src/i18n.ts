@@ -126,10 +126,24 @@ export interface Strings {
   personas: Record<PersonaId, Persona>;
   /** One line of proof under the personality on a poster, in the first person. */
   punchlines: Record<PersonaId, (w: Wrapped) => string>;
+  /** The number a personality's badge is built around, and what it counts. Picked to sit
+   *  beside the punchline rather than repeat it where the data allows. */
+  figures: Record<PersonaId, (w: Wrapped) => [value: string, label: string]>;
+  /** The label under the token count on an AI style's badge. */
+  tokensFigure: string;
 }
 
 const activeLanguages = (w: Wrapped): number => w.languages.filter((l) => l.share >= 0.05).length;
 const morningShare = (w: Wrapped): number => w.byHour.slice(5, 9).reduce((a, b) => a + b, 0) / w.commits;
+/** The figures on badges: 14:00, 2,148, 1.2M. */
+const clock = (h: number): string => `${String(h).padStart(2, '0')}:00`;
+const count = (n: number): string => (n >= 100_000 ? compact(n) : fmt(n));
+/** The earliest hour anyone would call morning (from 4 AM) that saw a commit. */
+const earliest = (w: Wrapped): number => {
+  const h = w.byHour.findIndex((n, hour) => hour >= 4 && n > 0);
+  return h < 0 ? w.peakHour : h;
+};
+const weekendCommits = (w: Wrapped): number => Math.round(w.weekendShare * w.commits);
 
 /** +32% / −12%, with a real minus sign. */
 const signed = (p: number): string => `${p >= 0 ? '+' : '−'}${Math.abs(p)}%`;
@@ -286,6 +300,18 @@ const en: Strings = {
   card: 'Share card',
   topLanguages: 'Top languages',
 
+  figures: {
+    nightOwl: (w) => (w.latestNight ? [w.latestNight.time, 'LATEST COMMIT'] : [`${pct(w.nightShare)}%`, 'AFTER 10 PM']),
+    earlyBird: (w) => [clock(earliest(w)), 'EARLIEST START'],
+    weekendWarrior: (w) => [count(weekendCommits(w)), 'WEEKEND COMMITS'],
+    marathoner: (w) => [fmt(w.longestStreak.days), 'DAYS IN A ROW'],
+    bugHunter: (w) => [count(w.fixCommits), 'FIXES'],
+    cleaner: (w) => [`−${compact(w.deleted)}`, 'LINES DELETED'],
+    polyglot: (w) => [String(activeLanguages(w)), 'LANGUAGES'],
+    nineToFive: (w) => [clock(w.peakHour), 'PEAK HOUR'],
+    builder: (w) => [count(w.commits), 'COMMITS'],
+  },
+  tokensFigure: 'AI TOKENS',
   punchlines: {
     nightOwl: (w) => `${pct(w.nightShare)}% of my commits landed between 10 PM and 5 AM`,
     earlyBird: (w) => `${pct(morningShare(w))}% of my commits landed before 9 AM`,
@@ -483,6 +509,18 @@ const zh: Strings = {
   card: '分享卡片',
   topLanguages: '常用语言',
 
+  figures: {
+    nightOwl: (w) => (w.latestNight ? [w.latestNight.time, '最晚一次提交'] : [`${pct(w.nightShare)}%`, '夜间提交']),
+    earlyBird: (w) => [clock(earliest(w)), '最早开工'],
+    weekendWarrior: (w) => [count(weekendCommits(w)), '周末提交'],
+    marathoner: (w) => [fmt(w.longestStreak.days), '天连续提交'],
+    bugHunter: (w) => [count(w.fixCommits), '次修复'],
+    cleaner: (w) => [`−${compact(w.deleted)}`, '删掉的行数'],
+    polyglot: (w) => [String(activeLanguages(w)), '种语言'],
+    nineToFive: (w) => [clock(w.peakHour), '最常提交的时段'],
+    builder: (w) => [count(w.commits), '次提交'],
+  },
+  tokensFigure: 'AI TOKENS',
   punchlines: {
     nightOwl: (w) => `${pct(w.nightShare)}% 的提交在晚上 10 点到凌晨 5 点之间`,
     earlyBird: (w) => `${pct(morningShare(w))}% 的提交在早上 9 点之前`,

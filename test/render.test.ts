@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { escapeXml as esc } from '../src/format.ts';
 import { strings } from '../src/i18n.ts';
 import { CARD_SIZES, renderCard, type CardFormat } from '../src/render/card.ts';
 import { renderHtml } from '../src/render/html.ts';
@@ -77,11 +78,22 @@ for (const lang of ['en', 'zh'] as const) {
         assert.equal(faces[order[order.length - 1]], persona, `${persona} reel lands on its badge`);
         assert.ok(order.slice(0, -1).every((i) => faces[i] !== persona), `${persona} reel spins through the others first`);
         assert.ok(html.includes(`aria-label="${main.name}"`), `${persona} name is labelled whole`);
-        // Drawn badges replace the emoji on the cards; with this many gradients, ids must not repeat.
+        // Drawn badges replace the emoji on the cards; with this many clip paths, ids must not repeat.
+        // The poster's badge and the reveal's last face carry the user's own number.
+        const [value, label] = t.figures[persona](w);
+        const landing = html.slice(html.indexOf(`class="face on" data-persona="${persona}"`));
+        assert.ok(landing.slice(0, landing.indexOf('</svg>')).includes(`>${esc(value)}</text>`), `${persona} reveal shows its number`);
+        const style = w.ai ? t.aiStyles.pairProgrammer : undefined;
         for (const f of FORMATS) {
-          assert.ok(posters[f].includes(`id="art-poster-${f}-sticker-disc"`) && !posters[f].includes(main.emoji), `${persona} poster ${f} badge`);
-          assert.ok(cards[f].includes(`id="art-${f}-persona-disc"`) && !cards[f].includes(main.emoji), `${persona} card ${f} badge`);
+          assert.ok(posters[f].includes(`id="art-poster-${f}-sticker-tile"`) && !posters[f].includes(main.emoji), `${persona} poster ${f} badge`);
+          assert.ok(posters[f].includes(`>${esc(value)}</text>`) && posters[f].includes(`>${esc(label)}</text>`), `${persona} poster ${f} badge number`);
+          assert.ok(cards[f].includes(`id="art-${f}-persona-tile"`) && !cards[f].includes(main.emoji), `${persona} card ${f} badge`);
+          if (style) {
+            assert.ok(posters[f].includes(`id="art-poster-${f}-ai-tile"`) && !posters[f].includes(style.emoji), `${persona} poster ${f} AI badge`);
+            assert.ok(cards[f].includes(`id="art-${f}-ai-tile"`) && !cards[f].includes(style.emoji), `${persona} card ${f} AI badge`);
+          }
         }
+        if (style) assert.ok(html.includes('id="art-ai-slide-tile"') && !html.includes(style.emoji), `${persona} report AI badge`);
         const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
         assert.equal(new Set(ids).size, ids.length, `${persona} page ids are unique`);
       }
