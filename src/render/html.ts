@@ -365,14 +365,23 @@ function persona(w: Wrapped, t: Strings): string {
   const styleId = aiStyle(w);
   if (styleId) stats.unshift([t.aiStyleIntro, `${t.aiStyles[styleId].emoji} ${t.aiStyles[styleId].name}`]);
   const badges = others.length
-    ? `<div class="badges" ${reveal(5)}><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
+    ? `<div class="badges after" style="--d:3"><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
     : '';
+  // The reveal: every personality's emoji spins past like a slot machine, slows, and lands
+  // on yours; then a burst, the name letter by letter, and the rest. The script runs the reel.
+  const reel = Object.values(t.personas).map((p) => p.emoji).filter((e) => e !== main.emoji);
+  let letter = 0;
+  const name = main.name
+    .split(' ')
+    .map((word) => `<span class="word">${[...word].map((ch) => `<span class="ch" style="--i:${letter++}">${esc(ch)}</span>`).join('')}</span>`)
+    .join(' ');
+  const sparks = Array.from({ length: 14 }, (_, i) => `<i style="--a:${Math.round(i * (360 / 14))}deg"></i>`).join('');
   return `<div class="backdrop" aria-hidden="true"><div class="hero-emoji">${main.emoji}</div></div>
 <div class="kicker" ${reveal(0)}>${esc(t.personaIntro)}</div>
-<div class="emoji" ${reveal(1)}>${main.emoji}</div>
-<h1 ${reveal(2)}>${esc(main.name)}</h1>
-<p class="sub" ${reveal(3)}>${esc(main.desc(w))}</p>
-<div class="stats" ${reveal(4)}>${stats.map(([label, value]) => `<div><div class="label">${esc(label)}</div><div class="fact">${esc(value)}</div></div>`).join('')}</div>
+<div class="emoji-wrap"><div class="burst" aria-hidden="true"></div><div class="sparks" aria-hidden="true">${sparks}</div><div class="emoji" data-reel="${esc(JSON.stringify([...reel, ...reel]))}" data-final="${main.emoji}">${main.emoji}</div></div>
+<h1 class="persona-name" aria-label="${esc(main.name)}"><span aria-hidden="true">${name}</span></h1>
+<p class="sub after" style="--d:1">${esc(main.desc(w))}</p>
+<div class="stats after" style="--d:2">${stats.map(([label, value]) => `<div><div class="label">${esc(label)}</div><div class="fact">${esc(value)}</div></div>`).join('')}</div>
 ${badges}`;
 }
 
@@ -493,9 +502,26 @@ blockquote::before{content:'“'}blockquote::after{content:'”'}
 .meta{text-align:right;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
 .chips{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:baseline;margin:8px 0 24px}
 .chip{display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:700}
-.emoji{font-size:clamp(88px,16vw,140px);line-height:1;margin-bottom:12px}
-.in .emoji{animation:land .9s cubic-bezier(.2,1.4,.4,1) both;animation-delay:.15s}
-@keyframes land{from{transform:scale(.2) rotate(-20deg);opacity:0}}
+.emoji-wrap{position:relative;align-self:flex-start;margin-bottom:12px}
+.emoji{position:relative;font-size:clamp(88px,16vw,140px);line-height:1}
+.spinning .emoji{filter:blur(1.5px);opacity:.8;transform:scale(.9)}
+.landed .emoji{animation:land .8s cubic-bezier(.2,1.6,.4,1) both}
+@keyframes land{0%{transform:scale(1.6) rotate(-12deg)}60%{transform:scale(.92) rotate(3deg)}}
+.burst{position:absolute;inset:-20%;border-radius:50%;background:radial-gradient(circle,var(--g2) 0,var(--g1) 35%,transparent 70%);opacity:0;pointer-events:none}
+.landed .burst{animation:burst 1.1s ease-out both}
+@keyframes burst{0%{opacity:.9;transform:scale(.3)}100%{opacity:0;transform:scale(3.2)}}
+.sparks i{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:var(--accent);opacity:0}
+.sparks i:nth-child(3n+1){background:var(--g1)}.sparks i:nth-child(3n+2){background:var(--g2);width:9px;height:9px;margin:-4.5px}
+.landed .sparks i{animation:spark 1s cubic-bezier(.1,.7,.3,1) both,fade 1s linear both}
+@keyframes spark{0%{transform:rotate(var(--a)) translateX(30px)}100%{transform:rotate(var(--a)) translateX(clamp(130px,24vw,240px)) scale(.5)}}
+@keyframes fade{0%,55%{opacity:1}100%{opacity:0}}
+.persona-name .word{display:inline-block;white-space:nowrap}
+.persona-name .ch{display:inline-block;opacity:0;transform:translateY(.35em)}
+.landed .persona-name .ch{animation:rise .55s cubic-bezier(.2,1.3,.4,1) both;animation-delay:calc(180ms + var(--i) * 40ms)}
+@keyframes rise{to{opacity:1;transform:none}}
+.after{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1);transition-delay:calc(500ms + var(--d,0) * 160ms)}
+.landed .after{opacity:1;transform:none}
+.hero-emoji{transition:opacity 1.4s ease}.slide:not(.landed) .hero-emoji{opacity:0}
 .badges{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:28px}
 .badges .label{margin:0 6px 0 0}
 .formats{display:inline-flex;align-self:flex-start;gap:4px;padding:4px;margin-bottom:16px;border-radius:999px;background:rgba(255,255,255,.08)}
@@ -584,7 +610,8 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
   .moment{padding:10px 14px}blockquote{font-size:15px}
   .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}}
 @media (prefers-reduced-motion:reduce){.slide,.slide.past{transform:none;transition:opacity .2s,visibility 0s}.reveal{opacity:1;transform:none;transition:none}
-  .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.in .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}}
+  .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.landed .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}
+  .persona-name .ch,.after{opacity:1;transform:none;animation:none;transition:none}.burst,.sparks{display:none}}
 `;
 
 const SCRIPT = `
@@ -600,6 +627,33 @@ function countUp(el) {
   requestAnimationFrame(step);
 }
 
+// The personality reveal: the reel runs through every personality's emoji, slows down and
+// lands on yours. Timers rather than frames, so it finishes even where frames stall.
+let spins = 0;
+function spin(slide, el) {
+  const faces = JSON.parse(el.dataset.reel), id = ++spins;
+  const land = () => {
+    el.textContent = el.dataset.final;
+    slide.classList.remove('spinning');
+    slide.classList.add('landed');
+    if (Music && Music.on) Music.chime();
+  };
+  if (reduced) return land();
+  // Swap the face before the page shows, so the answer never flashes first.
+  el.textContent = faces[0];
+  slide.classList.add('spinning');
+  let k = 1;
+  const step = () => {
+    if (id !== spins || slides[current] !== slide) return;
+    if (k === faces.length) return land();
+    el.textContent = faces[k];
+    if (Music && Music.on) Music.blip();
+    const p = k++ / faces.length;
+    setTimeout(step, 45 + 320 * p * p * p);
+  };
+  setTimeout(step, 400);
+}
+
 const slides = [...document.querySelectorAll('.slide')];
 const bars = [...document.querySelectorAll('.progress i')];
 let current = -1;
@@ -610,11 +664,13 @@ function show(i) {
     s.classList.toggle('active', k === i);
     s.classList.toggle('past', k < i);
     s.setAttribute('aria-hidden', String(k !== i));
-    if (k !== i) s.classList.remove('in');
+    if (k !== i) s.classList.remove('in', 'spinning', 'landed');
   });
   bars.forEach((b, k) => b.classList.toggle('done', k <= i));
   const slide = slides[i];
   slide.scrollTop = 0;
+  const reel = slide.querySelector('.emoji[data-reel]');
+  if (reel) spin(slide, reel);
   // Replay the page's animations every time it is shown. Frames can stall in throttled
   // or embedded views, so a timer backs them up: a page must never be left blank.
   let started = false;
@@ -803,6 +859,10 @@ const Music = (() => {
   }
   return {
     get on() { return on; },
+    /** A soft tick for each face of the personality reel. */
+    blip() { if (on) note(88, ctx.currentTime, 0.06, 'square', 0.012, 5000); },
+    /** A bright arpeggio when the personality lands. */
+    chime() { if (on) [72, 76, 79, 84, 88].forEach((m, k) => note(m, ctx.currentTime + k * 0.06, 1.4, 'triangle', 0.05, 4500)); },
     start() {
       if (!ctx) setup();
       clearTimeout(stopTimer);

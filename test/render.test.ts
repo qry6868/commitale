@@ -66,6 +66,12 @@ for (const lang of ['en', 'zh'] as const) {
         const html = renderHtml(w, t, { poster: posters, data: cards });
         assert.doesNotMatch(html, /NaN|undefined/, persona);
         assert.equal(html.includes(t.vsYear(50, 2025, false)), Boolean(previous));
+        // The reveal lands on this personality, and screen readers get the name whole.
+        const main = t.personas[persona];
+        assert.ok(html.includes(`data-final="${main.emoji}"`), `${persona} reveal lands on its emoji`);
+        assert.ok(html.includes(`aria-label="${main.name}"`), `${persona} name is labelled whole`);
+        const reel = JSON.parse(/data-reel="([^"]+)"/.exec(html)![1].replaceAll('&#34;', '"')) as string[];
+        assert.ok(reel.length >= 8 && !reel.includes(main.emoji), `${persona} reel spins through the others`);
       }
     }
   });
