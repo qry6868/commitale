@@ -66,12 +66,24 @@ for (const lang of ['en', 'zh'] as const) {
         const html = renderHtml(w, t, { poster: posters, data: cards });
         assert.doesNotMatch(html, /NaN|undefined/, persona);
         assert.equal(html.includes(t.vsYear(50, 2025, false)), Boolean(previous));
-        // The reveal lands on this personality, and screen readers get the name whole.
+        // The reveal spins through the other badges twice and lands on this personality's,
+        // and screen readers get the name whole.
         const main = t.personas[persona];
-        assert.ok(html.includes(`data-final="${main.emoji}"`), `${persona} reveal lands on its emoji`);
+        const faces = [...html.matchAll(/class="face( on)?" data-persona="(\w+)"/g)].map((m) => m[2]);
+        assert.equal(faces.length, PERSONAS.length, `${persona} reel has every badge`);
+        assert.ok(html.includes(`class="face on" data-persona="${persona}"`), `${persona} shows its own badge without the script`);
+        const order = JSON.parse(/data-reel="([^"]+)"/.exec(html)![1]) as number[];
+        assert.equal(order.length, 2 * (PERSONAS.length - 1) + 1, `${persona} reel length`);
+        assert.equal(faces[order[order.length - 1]], persona, `${persona} reel lands on its badge`);
+        assert.ok(order.slice(0, -1).every((i) => faces[i] !== persona), `${persona} reel spins through the others first`);
         assert.ok(html.includes(`aria-label="${main.name}"`), `${persona} name is labelled whole`);
-        const reel = JSON.parse(/data-reel="([^"]+)"/.exec(html)![1].replaceAll('&#34;', '"')) as string[];
-        assert.ok(reel.length >= 8 && !reel.includes(main.emoji), `${persona} reel spins through the others`);
+        // Drawn badges replace the emoji on the cards; with this many gradients, ids must not repeat.
+        for (const f of FORMATS) {
+          assert.ok(posters[f].includes(`id="art-poster-${f}-sticker-disc"`) && !posters[f].includes(main.emoji), `${persona} poster ${f} badge`);
+          assert.ok(cards[f].includes(`id="art-${f}-persona-disc"`) && !cards[f].includes(main.emoji), `${persona} card ${f} badge`);
+        }
+        const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+        assert.equal(new Set(ids).size, ids.length, `${persona} page ids are unique`);
       }
     }
   });

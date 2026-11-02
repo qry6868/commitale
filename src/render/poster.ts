@@ -1,7 +1,8 @@
 import { aiStyle } from '../ai.ts';
 import { compact, escapeXml as esc, fmt, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
-import type { Wrapped } from '../stats.ts';
+import type { PersonaId, Wrapped } from '../stats.ts';
+import { personaArt } from './art.ts';
 import { CARD_SIZES, DISPLAY, FONT, type CardFormat, type CardOptions } from './card.ts';
 import { FONT_FACE, HEADLINE_FAMILY } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
@@ -19,7 +20,7 @@ interface Item {
 interface Content {
   theme: Theme;
   name: string;
-  emoji: string;
+  persona: PersonaId;
   /** The fact that earned the personality, e.g. "38% of my commits landed between 10 PM and 5 AM". */
   punchline: string;
   ai?: { emoji: string; name: string };
@@ -42,7 +43,7 @@ export function renderPoster(w: Wrapped, t: Strings, format: CardFormat = 'wide'
   const c: Content = {
     theme,
     name: CJK.test(persona.name) ? persona.name : persona.name.toUpperCase(),
-    emoji: persona.emoji,
+    persona: w.personas[0],
     punchline: t.punchlines[w.personas[0]](w),
     ai: styleId ? { emoji: t.aiStyles[styleId].emoji, name: t.aiStyles[styleId].name } : undefined,
     lists: [
@@ -158,7 +159,7 @@ function wide(w: Wrapped, t: Strings, c: Content, id: string): string {
     out.push(`<text x="${pad}" y="${y}" font-size="38" fill="${dark}">${c.ai.emoji}<tspan dx="8" font-family="${headline()}" font-weight="800">${esc(upper(c.ai.name))}</tspan></text>`);
   }
   // Bottom corner: the title runs along the top, and the name and AI style fill the middle.
-  out.push(sticker(c.emoji, panelW - 80, H - 80, 84, id));
+  out.push(sticker(c.persona, panelW - 80, H - 80, 84, id));
 
   const x0 = panelW + 44;
   const areaW = W - x0 - 48;
@@ -246,16 +247,18 @@ function verdictPanel(
   parts.push(punchline(c, o.pad, y, Math.round(o.label * 1.1), o.width - o.pad * 2));
   const height = y - o.y + Math.round(o.label * 1.6);
   const rect = `<rect x="${o.x}" y="${o.y}" width="${o.width}" height="${height}" fill="${c.theme.accent}"/>`;
-  // The emoji sits on the block's top edge like a sticker.
-  const stick = sticker(c.emoji, o.x + o.width - o.pad - o.sticker * 0.55, o.y, o.sticker, o.id);
+  // The badge sits on the block's top edge like a sticker.
+  const stick = sticker(c.persona, o.x + o.width - o.pad - o.sticker * 0.55, o.y, o.sticker, o.id);
   return { svg: [rect, ...parts, stick].join('\n    '), height };
 }
 
-function sticker(emoji: string, cx: number, cy: number, size: number, id: string): string {
+/** The personality's badge in a white ring, tilted like a sticker. */
+function sticker(persona: PersonaId, cx: number, cy: number, size: number, id: string): string {
   const r = Math.round(size * 0.66);
+  const art = 2 * r - 8;
   return `<g transform="rotate(-10 ${Math.round(cx)} ${Math.round(cy)})" filter="url(#${id}-shadow)">
       <circle cx="${Math.round(cx)}" cy="${Math.round(cy)}" r="${r}" fill="#fff"/>
-      <text x="${Math.round(cx)}" y="${Math.round(cy + size * 0.35)}" font-size="${size}" text-anchor="middle">${emoji}</text>
+      ${personaArt(persona, `${id}-sticker`, { size: art, x: cx - art / 2, y: cy - art / 2 })}
     </g>`;
 }
 

@@ -1,7 +1,8 @@
 import { calendar, compact, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type Wrapped } from '../stats.ts';
+import { change, type PersonaId, type Wrapped } from '../stats.ts';
+import { personaArt } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor } from './theme.ts';
 
@@ -97,10 +98,10 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
 
   // The AI style stands beside the personality as an equal, not as a footnote.
   const styleId = aiStyle(w);
-  const badges: Badge[] = [{ emoji: persona.emoji, label: t.youAre, name: persona.name, desc: persona.desc(w) }];
+  const badges: Badge[] = [{ icon: artIcon(w.personas[0], `${format}-persona`), label: t.youAre, name: persona.name, desc: persona.desc(w) }];
   if (styleId) {
     const s = t.aiStyles[styleId];
-    badges.push({ emoji: s.emoji, label: t.aiStyleIntro, name: s.name, desc: s.desc });
+    badges.push({ icon: emojiIcon(s.emoji), label: t.aiStyleIntro, name: s.name, desc: s.desc });
   }
   const tiles = [
     { value: w.commits >= 100_000 ? compact(w.commits) : fmt(w.commits), label: t.cardCommits, delta: change(w.commits, prev?.commits), base: prev },
@@ -154,7 +155,7 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
   <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
   <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(t.cardTitle(w.year))}</text>
   <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
-  ${badges.length === 1 ? personaBlock(L, theme.accent, persona.emoji, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, theme.accent, badges[0], badges[1])}
+  ${badges.length === 1 ? personaBlock(L, theme.accent, badges[0].icon, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, theme.accent, badges[0], badges[1])}
   ${tiles}
   ${heat}
   ${languages(w, t, L, theme.accent, format)}
@@ -163,11 +164,11 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
 `;
 }
 
-function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, name: string, desc: string): string {
+function personaBlock(L: Layout, accent: string, icon: Icon, youAre: string, name: string, desc: string): string {
   const P = L.persona;
   const textX = P.x + P.emoji * 2;
   const box = `<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${Math.round(Math.min(P.h, 220) / 5)}" fill="#fff" fill-opacity="0.08"/>
-  <text x="${P.x + Math.round(P.emoji / 2)}" y="${P.y + Math.round(P.h / 2 + P.emoji * 0.36)}" font-size="${P.emoji}">${emoji}</text>`;
+  ${icon(P.x + Math.round(P.emoji / 2), P.y + Math.round(P.h / 2 - P.emoji / 2), P.emoji)}`;
   if (!P.desc) {
     return `${box}
   <text x="${textX}" y="${P.y + Math.round(P.h / 2 - P.name * 0.3)}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
@@ -182,8 +183,16 @@ function personaBlock(L: Layout, accent: string, emoji: string, youAre: string, 
   ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 
+/** What sits beside a badge's words, drawn with its top-left corner at (x, top). */
+type Icon = (x: number, top: number, size: number) => string;
+/** A personality gets its drawn badge, a touch larger than an emoji would be. */
+const artIcon = (id: PersonaId, key: string): Icon => (x, top, size) =>
+  personaArt(id, key, { size: size * 1.12, x: x - size * 0.06, y: top - size * 0.06 });
+const emojiIcon = (emoji: string): Icon => (x, top, size) =>
+  `<text x="${x}" y="${Math.round(top + size * 0.86)}" font-size="${size}">${emoji}</text>`;
+
 interface Badge {
-  emoji: string;
+  icon: Icon;
   label: string;
   name: string;
   desc: string;
@@ -210,7 +219,7 @@ function badgePair(L: Layout, format: CardFormat, accent: string, a: Badge, b: B
 function rowBadge(x: number, y: number, w: number, h: number, b: Badge, size: { emoji: number; label: number; name: number }, accent: string): string {
   const textX = x + size.emoji * 2;
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(Math.min(h, 120) / 5)}" fill="#fff" fill-opacity="0.08"/>
-  <text x="${x + Math.round(size.emoji / 2)}" y="${y + Math.round(h / 2 + size.emoji * 0.36)}" font-size="${size.emoji}">${b.emoji}</text>
+  ${b.icon(x + Math.round(size.emoji / 2), y + Math.round(h / 2 - size.emoji / 2), size.emoji)}
   <text x="${textX}" y="${y + Math.round(h / 2 - size.name * 0.3)}" font-size="${size.label}" font-weight="700" letter-spacing="${size.label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
   <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>`;
 }
@@ -222,7 +231,7 @@ function columnBadge(x: number, y: number, w: number, h: number, b: Badge, accen
   const nameY = labelY + Math.round(name * 1.3);
   const lines = wrap(b.desc, Math.floor((w - 2 * pad) / (desc * 0.52)), 2);
   return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#fff" fill-opacity="0.08"/>
-  <text x="${x + pad}" y="${y + pad + Math.round(emoji * 0.9)}" font-size="${emoji}">${b.emoji}</text>
+  ${b.icon(x + pad, y + pad + Math.round(emoji * 0.04), emoji)}
   <text x="${x + pad}" y="${labelY}" font-size="${label}" font-weight="700" letter-spacing="${label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
   <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>
   ${lines.map((line, i) => `<text x="${x + pad}" y="${nameY + Math.round(desc * 1.5 * (i + 1))}" font-size="${desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;

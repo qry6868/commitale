@@ -3,7 +3,8 @@
 ## Unreleased
 
 - New page, **Things you might not have noticed**: the quirks of your year, such as commits after 6 PM on a Friday, fixes in a row, reverts, your longest session and commits on holidays. Only the ones that stand out are shown.
-- **The personality reveal is a moment now**: every personality's emoji spins past like a slot machine, slows down and lands on yours, with a burst of light, the name rising letter by letter and, with the soundtrack on, a chime.
+- **Every personality has its own illustrated, animated badge** instead of an emoji: an owl that blinks and follows your pointer, a bird singing at sunrise, a sneaker on the run, a ladybug under a sweeping magnifier and more. They look the same on every system, and appear on the reveal page, the posters and the stats cards.
+- **The personality reveal is a moment now**: every personality's badge spins past like a slot machine, slows down and lands on yours, with a burst of light, the name rising letter by letter and, with the soundtrack on, a chime.
 - Every page fits on one screen on small phones (360×640 and up).
 - The wide poster shows your name.
 - The report and share text say "coding recap" / "Coding 年度报告", matching the posters.

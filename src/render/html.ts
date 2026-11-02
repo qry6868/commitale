@@ -1,8 +1,9 @@
 import { calendar, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type CommitType, type FunFact, type Holiday, type Moment, type Wrapped } from '../stats.ts';
+import { change, type CommitType, type FunFact, type Holiday, type Moment, type PersonaId, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
+import { ART_CSS, personaArt } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { themeFor, type Theme } from './theme.ts';
 
@@ -69,6 +70,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
 <title>commitale ${w.year} · ${esc(w.name)}</title>
 <style>${FONT_FACE}
 ${CSS}
+${ART_CSS}
 :root{--accent:${theme.accent};--g1:${theme.glow[0]};--g2:${theme.heat[4]}}</style>
 </head>
 <body>
@@ -355,7 +357,8 @@ ${a.cacheRead > 0 ? `<p class="sub" ${reveal(3)}>${esc(t.aiCache(pct(a.cacheRead
 }
 
 function persona(w: Wrapped, t: Strings): string {
-  const [main, ...others] = w.personas.map((id) => t.personas[id]);
+  const [mainId, ...otherIds] = w.personas;
+  const main = t.personas[mainId];
   // A few numbers behind the verdict, so it reads as earned rather than assigned.
   const stats: [string, string][] = [
     [t.peakLabel, t.hour(w.peakHour)],
@@ -364,21 +367,26 @@ function persona(w: Wrapped, t: Strings): string {
   if (w.languages[0]) stats.push([t.topLanguages, w.languages[0].name]);
   const styleId = aiStyle(w);
   if (styleId) stats.unshift([t.aiStyleIntro, `${t.aiStyles[styleId].emoji} ${t.aiStyles[styleId].name}`]);
-  const badges = others.length
-    ? `<div class="badges after" style="--d:3"><span class="label">${esc(t.alsoYou)}</span>${others.map((p) => `<span class="chip">${p.emoji} ${esc(p.name)}</span>`).join('')}</div>`
+  const badges = otherIds.length
+    ? `<div class="badges after" style="--d:3"><span class="label">${esc(t.alsoYou)}</span>${otherIds.map((id) => `<span class="chip">${personaArt(id, `chip-${id}`, { size: 24 })}${esc(t.personas[id].name)}</span>`).join('')}</div>`
     : '';
-  // The reveal: every personality's emoji spins past like a slot machine, slows, and lands
-  // on yours; then a burst, the name letter by letter, and the rest. The script runs the reel.
-  const reel = Object.values(t.personas).map((p) => p.emoji).filter((e) => e !== main.emoji);
+  // The reveal: every personality's badge spins past like a slot machine, slows, and lands
+  // on yours; then a burst, the name letter by letter, and the rest. The script runs the
+  // reel through the faces in `data-reel` order: the others twice, then yours.
+  const rest = (Object.keys(t.personas) as PersonaId[]).filter((id) => id !== mainId);
+  const faces = [...rest, mainId]
+    .map((id) => `<div class="face${id === mainId ? ' on' : ''}" data-persona="${id}">${personaArt(id, `reel-${id}`)}</div>`)
+    .join('');
+  const order = [...rest.keys(), ...rest.keys(), rest.length];
   let letter = 0;
   const name = main.name
     .split(' ')
     .map((word) => `<span class="word">${[...word].map((ch) => `<span class="ch" style="--i:${letter++}">${esc(ch)}</span>`).join('')}</span>`)
     .join(' ');
   const sparks = Array.from({ length: 14 }, (_, i) => `<i style="--a:${Math.round(i * (360 / 14))}deg"></i>`).join('');
-  return `<div class="backdrop" aria-hidden="true"><div class="hero-emoji">${main.emoji}</div></div>
+  return `<div class="backdrop" aria-hidden="true"><div class="hero-emoji">${personaArt(mainId, 'hero')}</div></div>
 <div class="kicker" ${reveal(0)}>${esc(t.personaIntro)}</div>
-<div class="emoji-wrap"><div class="burst" aria-hidden="true"></div><div class="sparks" aria-hidden="true">${sparks}</div><div class="emoji" data-reel="${esc(JSON.stringify([...reel, ...reel]))}" data-final="${main.emoji}">${main.emoji}</div></div>
+<div class="emoji-wrap"><div class="burst" aria-hidden="true"></div><div class="sparks" aria-hidden="true">${sparks}</div><div class="avatar" data-reel="${JSON.stringify(order)}">${faces}</div></div>
 <h1 class="persona-name" aria-label="${esc(main.name)}"><span aria-hidden="true">${name}</span></h1>
 <p class="sub after" style="--d:1">${esc(main.desc(w))}</p>
 <div class="stats after" style="--d:2">${stats.map(([label, value]) => `<div><div class="label">${esc(label)}</div><div class="fact">${esc(value)}</div></div>`).join('')}</div>
@@ -503,9 +511,10 @@ blockquote::before{content:'“'}blockquote::after{content:'”'}
 .chips{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:baseline;margin:8px 0 24px}
 .chip{display:inline-block;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.1);font-weight:700}
 .emoji-wrap{position:relative;align-self:flex-start;margin-bottom:12px}
-.emoji{position:relative;font-size:clamp(88px,16vw,140px);line-height:1}
-.spinning .emoji{filter:blur(1.5px);opacity:.8;transform:scale(.9)}
-.landed .emoji{animation:land .8s cubic-bezier(.2,1.6,.4,1) both}
+.avatar{position:relative;width:clamp(120px,17vw,176px);aspect-ratio:1}
+.face{position:absolute;inset:0;visibility:hidden}.face.on{visibility:visible}.face .art{display:block;width:100%;height:100%}
+.spinning .avatar{filter:blur(1.5px);opacity:.85;transform:scale(.9)}
+.landed .avatar{animation:land .8s cubic-bezier(.2,1.6,.4,1) both}
 @keyframes land{0%{transform:scale(1.6) rotate(-12deg)}60%{transform:scale(.92) rotate(3deg)}}
 .burst{position:absolute;inset:-20%;border-radius:50%;background:radial-gradient(circle,var(--g2) 0,var(--g1) 35%,transparent 70%);opacity:0;pointer-events:none}
 .landed .burst{animation:burst 1.1s ease-out both}
@@ -556,7 +565,9 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 .footer{margin-top:32px;color:var(--muted);font-size:14px}
 .backdrop{position:absolute;inset:0;overflow:hidden;z-index:-1;pointer-events:none}
 .hero-year{font-family:var(--display);position:absolute;right:-1vw;bottom:-4vh;font-size:clamp(160px,32vw,460px);font-weight:900;letter-spacing:-.06em;line-height:.8;color:transparent;-webkit-text-stroke:2px rgba(255,255,255,.1);pointer-events:none;user-select:none}
-.hero-emoji{position:absolute;right:4vw;top:50%;transform:translateY(-50%) rotate(-8deg);font-size:clamp(200px,34vw,460px);line-height:1;opacity:.12;filter:blur(2px) saturate(1.3);pointer-events:none}
+.hero-emoji{position:absolute;right:4vw;top:50%;transform:translateY(-50%) rotate(-8deg);opacity:.12;filter:blur(2px) saturate(1.3);pointer-events:none}
+.hero-emoji .art{display:block;width:clamp(220px,34vw,460px);height:auto}
+.chip .art{vertical-align:-7px;margin-right:6px}
 .heat.mini{gap:2px;margin:12px 0 0;max-width:640px;opacity:.9}
 .heat.mini i{border-radius:2px}
 .split{display:grid;gap:36px;align-items:center}
@@ -610,7 +621,7 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
   .moment{padding:10px 14px}blockquote{font-size:15px}
   .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}}
 @media (prefers-reduced-motion:reduce){.slide,.slide.past{transform:none;transition:opacity .2s,visibility 0s}.reveal{opacity:1;transform:none;transition:none}
-  .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.landed .emoji,.in .col i,.in .ratio i,.in .share i{animation:none}
+  .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.landed .avatar,.in .col i,.in .ratio i,.in .share i{animation:none}
   .persona-name .ch,.after{opacity:1;transform:none;animation:none;transition:none}.burst,.sparks{display:none}}
 `;
 
@@ -627,33 +638,42 @@ function countUp(el) {
   requestAnimationFrame(step);
 }
 
-// The personality reveal: the reel runs through every personality's emoji, slows down and
+// The personality reveal: the reel runs through every personality's badge, slows down and
 // lands on yours. Timers rather than frames, so it finishes even where frames stall.
 let spins = 0;
-function spin(slide, el) {
-  const faces = JSON.parse(el.dataset.reel), id = ++spins;
+function spin(slide, box) {
+  const order = JSON.parse(box.dataset.reel), faces = [...box.children], id = ++spins;
+  const face = (k) => faces.forEach((f, i) => f.classList.toggle('on', i === k));
   const land = () => {
-    el.textContent = el.dataset.final;
+    face(order[order.length - 1]);
     slide.classList.remove('spinning');
     slide.classList.add('landed');
     if (Music && Music.on) Music.chime();
   };
   if (reduced) return land();
   // Swap the face before the page shows, so the answer never flashes first.
-  el.textContent = faces[0];
+  face(order[0]);
   slide.classList.add('spinning');
   let k = 1;
   const step = () => {
     if (id !== spins || slides[current] !== slide) return;
-    if (k === faces.length) return land();
-    el.textContent = faces[k];
+    if (k === order.length - 1) return land();
+    face(order[k]);
     if (Music && Music.on) Music.blip();
-    const p = k++ / faces.length;
+    const p = k++ / order.length;
     setTimeout(step, 45 + 320 * p * p * p);
   };
   setTimeout(step, 400);
 }
-
+// The owl's eyes follow the pointer.
+addEventListener('pointermove', (e) => {
+  document.querySelectorAll('.slide.active .art .a-pupils').forEach((g) => {
+    const r = g.ownerSVGElement.getBoundingClientRect();
+    const dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy) || 1, k = Math.min(2.5, d / 60);
+    g.style.transform = 'translate(' + (dx / d * k).toFixed(2) + 'px,' + (dy / d * k).toFixed(2) + 'px)';
+  });
+}, { passive: true });
 const slides = [...document.querySelectorAll('.slide')];
 const bars = [...document.querySelectorAll('.progress i')];
 let current = -1;
@@ -669,7 +689,7 @@ function show(i) {
   bars.forEach((b, k) => b.classList.toggle('done', k <= i));
   const slide = slides[i];
   slide.scrollTop = 0;
-  const reel = slide.querySelector('.emoji[data-reel]');
+  const reel = slide.querySelector('.avatar[data-reel]');
   if (reel) spin(slide, reel);
   // Replay the page's animations every time it is shown. Frames can stall in throttled
   // or embedded views, so a timer backs them up: a page must never be left blank.
