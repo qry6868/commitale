@@ -1,7 +1,8 @@
 /**
  * Builds the live demo site into site/: the demo report in English (index.html) and
  * Chinese (zh.html), each with a small badge saying it's sample data and how to get
- * your own. GitHub Pages serves it; see .github/workflows/pages.yml.
+ * your own, and a page of every personality and AI style (personalities.html,
+ * zh-personalities.html). GitHub Pages serves it; see .github/workflows/pages.yml.
  *
  *   node scripts/site.ts
  */
@@ -10,12 +11,13 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { renderGallery } from './gallery.ts';
 
 const REPO = 'https://github.com/qry6868/commitale';
 
 const PAGES = [
-  { lang: 'en', file: 'index.html', note: 'Sample data. Get your own:', other: { href: 'zh.html', label: '中文' } },
-  { lang: 'zh', file: 'zh.html', note: '示例数据。生成你自己的：', other: { href: './', label: 'English' } },
+  { lang: 'en', file: 'index.html', gallery: 'personalities.html', note: 'Sample data. Get your own:', all: 'All personalities', other: { href: 'zh.html', label: '中文' } },
+  { lang: 'zh', file: 'zh.html', gallery: 'zh-personalities.html', note: '示例数据。生成你自己的：', all: '全部人格', other: { href: './', label: 'English' } },
 ] as const;
 
 const badge = (page: (typeof PAGES)[number]): string => `
@@ -27,10 +29,10 @@ const badge = (page: (typeof PAGES)[number]): string => `
 .demo-badge code{font:600 12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.14)}
 .demo-badge .sep{opacity:.35}
 /* Phone pages use the whole screen, so the badge shows on the opening page only, in its free top corner. */
-@media (max-width:640px){.demo-badge{display:none;top:30px;bottom:auto;left:16px;transform:none;padding:6px 12px;font-size:12px}.demo-badge .note{display:none}
+@media (max-width:640px){.demo-badge{display:none;top:30px;bottom:auto;left:16px;transform:none;padding:6px 12px;font-size:12px}.demo-badge .note,.demo-badge .all{display:none}
   .slide:first-of-type.active ~ .demo-badge{display:flex}}
 </style>
-<div class="demo-badge"><span class="note">${page.note}</span><a href="${REPO}"><code>npx commitale</code> ↗</a><span class="sep">|</span><a href="${page.other.href}" lang="${page.lang === 'en' ? 'zh' : 'en'}">${page.other.label}</a></div>
+<div class="demo-badge"><span class="note">${page.note}</span><a href="${REPO}"><code>npx commitale</code> ↗</a><span class="sep all">|</span><a class="all" href="${page.gallery}">${page.all}</a><span class="sep">|</span><a href="${page.other.href}" lang="${page.lang === 'en' ? 'zh' : 'en'}">${page.other.label}</a></div>
 `;
 
 const root = fileURLToPath(new URL('..', import.meta.url));
@@ -46,6 +48,7 @@ for (const page of PAGES) {
   if (!report) throw new Error(`No report in ${tmp}`);
   const html = readFileSync(join(tmp, report), 'utf8').replace('</body>', `${badge(page)}</body>`);
   writeFileSync(join(out, page.file), html);
+  writeFileSync(join(out, page.gallery), renderGallery(page.lang, REPO));
   rmSync(tmp, { recursive: true, force: true });
 }
-console.log(`Wrote ${PAGES.map((p) => `site/${p.file}`).join(', ')}`);
+console.log(`Wrote ${PAGES.flatMap((p) => [`site/${p.file}`, `site/${p.gallery}`]).join(', ')}`);

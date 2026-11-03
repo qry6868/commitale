@@ -15,7 +15,7 @@ English · [简体中文](docs/README.zh-CN.md)
 
 <a href="https://qry6868.github.io/commitale/"><img src="assets/demo-poster.svg" alt="A Commitale poster card, My 2026 coding recap: when coding, I'm The Night Owl (38% of my commits landed between 10 PM and 5 AM), AI style The Pair Programmer, 653 commits, 674M AI tokens, a 41-day streak." width="760"></a>
 
-**[▶ See a live demo](https://qry6868.github.io/commitale/)**: a full report on sample data, nothing to install.
+**[▶ See a live demo](https://qry6868.github.io/commitale/)**: a full report on sample data, nothing to install. Or browse [every personality and AI style](https://qry6868.github.io/commitale/personalities.html) and what earns each one.
 
 </div>
 

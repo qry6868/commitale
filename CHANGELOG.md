@@ -5,6 +5,7 @@
 - New page, **Things you might not have noticed**: the quirks of your year, such as commits after 6 PM on a Friday, fixes in a row, reverts, your longest session and commits on holidays. Only the ones that stand out are shown.
 - **Every personality and AI style has its own badge** instead of an emoji, in a flat, print-poster style: a character built from simple shapes, peeking over **your own number** (your latest commit, your streak, your fixes…), so no two people's badges are the same. On the report they move (the owl blinks and follows your pointer, the clock runs, the robot in headphones nods along); on the posters and stats cards they stand still, and they look the same on every system.
 - **The personality reveal is a moment now**: every personality's badge spins past like a slot machine, slows down and lands on yours, with a burst of light, the name rising letter by letter and, with the soundtrack on, a chime.
+- The live demo has a page of [every personality and AI style](https://qry6868.github.io/commitale/personalities.html), with what earns each one.
 - Every page fits on one screen on small phones (360×640 and up).
 - The wide poster shows your name.
 - The report and share text say "coding recap" / "Coding 年度报告", matching the posters.

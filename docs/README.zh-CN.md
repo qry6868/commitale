@@ -15,7 +15,7 @@
 
 <a href="https://qry6868.github.io/commitale/zh.html"><img src="../assets/demo-poster.svg" alt="Commitale 海报卡片，我的 2026 Coding 年度报告：Coding 时，我是夜猫子（38% 的提交在晚上 10 点到凌晨 5 点之间），AI 搭档类型是结对搭档，653 次提交、6.7 亿 AI token、最长连续 41 天。" width="760"></a>
 
-**[▶ 在线看示例报告](https://qry6868.github.io/commitale/zh.html)**：用示例数据生成的完整报告，无需安装。
+**[▶ 在线看示例报告](https://qry6868.github.io/commitale/zh.html)**：用示例数据生成的完整报告，无需安装。也可以看看[全部编程人格和 AI 搭档类型](https://qry6868.github.io/commitale/zh-personalities.html)，以及怎样才能拿到。
 
 </div>
 
