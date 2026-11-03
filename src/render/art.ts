@@ -2,6 +2,7 @@ import type { AiStyleId } from '../ai.ts';
 import { escapeXml as esc } from '../format.ts';
 import type { PersonaId } from '../stats.ts';
 import { DISPLAY_FAMILY, HEADLINE_FAMILY } from './font.ts';
+import { BLUE, BRICK, CREAM, GREEN, INK, NAVY, ORANGE, PINK, PLUM, RED, TEAL, YELLOW } from './palette.ts';
 
 /**
  * A badge for each personality and AI style, in place of emoji: emoji look different on
@@ -34,18 +35,6 @@ export function aiArt(id: AiStyleId, key: string, place: Place = {}, figure?: Fi
   return badge(AI[id], key, place, figure);
 }
 
-const CREAM = '#F3EBDD';
-const INK = '#16161D';
-const NAVY = '#1F2A5C';
-const RED = '#E8553A';
-const BRICK = '#C23B2E';
-const YELLOW = '#F2C14E';
-const ORANGE = '#F2A541';
-const TEAL = '#3AA6A0';
-const BLUE = '#2D6CB5';
-const PLUM = '#7B5EA7';
-const PINK = '#D94F8A';
-const GREEN = '#2F9E68';
 
 interface Look {
   bg: string;

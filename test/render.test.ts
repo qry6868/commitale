@@ -94,6 +94,12 @@ for (const lang of ['en', 'zh'] as const) {
           }
         }
         if (style) assert.ok(html.includes('id="art-ai-slide-tile"') && !html.includes(style.emoji), `${persona} report AI badge`);
+        // Flat print backdrops: colour fields and dark data pages, the reveal on its own stage,
+        // and no glows or gradients anywhere on the page.
+        const kinds = [...html.matchAll(/<section class="slide (\w+)" data-tone="(light|dark)" style="--bg:#[0-9A-F]{6};/g)].map((m) => m[1]);
+        assert.equal(kinds.length, [...html.matchAll(/<section class="slide/g)].length, `${persona} every page has a backdrop`);
+        assert.ok(kinds[0] === 'field' && kinds.includes('data') && kinds.filter((k) => k === 'stage').length === 1, `${persona} page kinds ${kinds}`);
+        assert.doesNotMatch(html, /(linear|radial)-gradient\(/, `${persona} has no gradients`);
         const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
         assert.equal(new Set(ids).size, ids.length, `${persona} page ids are unique`);
       }
