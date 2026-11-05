@@ -6,6 +6,7 @@ import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
 import { ART_CSS, aiArt, personaArt } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
 import { icon, ICON_CSS, type MomentIcon } from './icons.ts';
+import { LOOK_CSS, LOOKS, lookDefs } from './looks.ts';
 import { BLUE, NIGHT, PINK, PLUM, RED, TEAL, YELLOW } from './palette.ts';
 import { SCENERY_CSS, scenery, type Kind } from './scenery.ts';
 
@@ -43,6 +44,7 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
   ).filter((s) => Boolean(s.body));
 
   const scenes = scenery(w.personas[0], slides.map((s) => s.kind));
+  const look = LOOKS[w.personas[0]];
   const sections = slides
     .map((s, i) => {
       const scene = scenes[i];
@@ -64,10 +66,11 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
 ${CSS}
 ${ART_CSS}
 ${SCENERY_CSS}
-${ICON_CSS}</style>
+${ICON_CSS}
+${LOOK_CSS}</style>
 </head>
-<body>
-<div class="grain" aria-hidden="true"></div>
+<body class="look-${look}">
+${lookDefs(look)}<div class="grain" aria-hidden="true"></div>
 <div class="progress" aria-hidden="true">${slides.map(() => '<i><b></b></i>').join('')}</div>
 ${sections}
 <div class="nav"><button class="prev" aria-label="Previous">‹</button><button class="next" aria-label="Next">›</button></div>
@@ -614,7 +617,8 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
   .types{grid-template-columns:1fr 1fr;column-gap:18px}.row.type{grid-template-columns:1fr 40px}.row.type em:first-of-type{display:none}
   .sub{font-size:16px;margin-top:8px}.chips{margin:4px 0 8px}
   .moment{padding:10px 14px}blockquote{font-size:15px}
-  .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}}
+  .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}
+  .avatar{width:92px}.emoji-wrap{margin-bottom:6px}.stats{margin-top:12px}.badges{margin-top:14px}}
 @media (prefers-reduced-motion:reduce){.slide.active{animation:none;clip-path:none}.slide.leaving{visibility:hidden}.reveal{opacity:1;transform:none;transition:none}
   .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.landed .avatar,.in .col i,.in .ratio i,.in .share i{animation:none}
   .persona-name .ch,.after{opacity:1;transform:none;animation:none;transition:none}.burst,.sparks{display:none}}
@@ -680,6 +684,7 @@ function show(i, from) {
   slides.forEach((s, k) => {
     s.classList.toggle('active', k === i);
     s.classList.toggle('leaving', s === before);
+    s.classList.toggle('back', !forward);
     s.classList.remove('first', 'settled');
     s.setAttribute('aria-hidden', String(k !== i));
     if (k !== i) s.classList.remove('in', 'spinning', 'landed');

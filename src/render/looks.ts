@@ -1,0 +1,123 @@
+import type { PersonaId } from '../stats.ts';
+import { HEADLINE_FAMILY } from './font.ts';
+import { CREAM, INK } from './palette.ts';
+
+/**
+ * Each personality's report has its own look on top of the shared layout: the same pages
+ * and colours, drawn in a different hand. **Geometric** is flat print shapes; **pop** is a
+ * comic book, with ink outlines, hard shadows, halftone dots and pages that slash in like
+ * panels; **painterly** is paint on canvas, with brushed edges and pages that bleed open
+ * like wet paint. Heavy filters are left out on phones, so pages stay smooth there.
+ */
+export type Look = 'geometric' | 'pop' | 'painterly';
+
+export const LOOKS: Record<PersonaId, Look> = {
+  nightOwl: 'geometric',
+  earlyBird: 'geometric',
+  weekendWarrior: 'pop',
+  marathoner: 'geometric',
+  bugHunter: 'pop',
+  cleaner: 'geometric',
+  polyglot: 'geometric',
+  nineToFive: 'geometric',
+  builder: 'painterly',
+};
+
+const svgUrl = (svg: string): string => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+const r1 = (n: number): number => Math.round(n * 10) / 10;
+
+// Halftone: dots that shrink away from the top-left corner.
+const dots = (() => {
+  let out = '';
+  for (let y = 3; y < 100; y += 6) {
+    for (let x = 3 + ((y / 6) % 2) * 3; x < 100; x += 6) {
+      const r = 2.9 * (1 - Math.hypot(x, y) / 120);
+      if (r > 0.35) out += `<circle cx="${x}" cy="${r1(y)}" r="${r1(r)}"/>`;
+    }
+  }
+  return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${out}</svg>`);
+})();
+
+// A comic starburst behind the reveal, as clip-path points.
+const star = Array.from({ length: 28 }, (_, i) => {
+  const a = (i * Math.PI) / 14;
+  const r = i % 2 ? 31 : 50 - (i % 4) * 3;
+  return `${r1(50 + r * Math.cos(a))}% ${r1(50 + r * Math.sin(a))}%`;
+}).join(',');
+
+// A blot of paint with uneven edges and a few splashes, for the page turn. A plain path, so
+// the browser scales it cheaply every frame.
+const blot = (() => {
+  const n = 64;
+  const pts = Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2;
+    const r = 38 + 4 * Math.sin(3 * a + 1) + 2.6 * Math.sin(7 * a + 2) + 1.6 * Math.sin(13 * a + 0.5);
+    return [50 + r * Math.cos(a), 50 + r * Math.sin(a)];
+  });
+  const mid = (p: number[], q: number[]): string => `${r1((p[0] + q[0]) / 2)} ${r1((p[1] + q[1]) / 2)}`;
+  let d = `M${mid(pts[n - 1], pts[0])}`;
+  for (let i = 0; i < n; i++) d += `Q${r1(pts[i][0])} ${r1(pts[i][1])} ${mid(pts[i], pts[(i + 1) % n])}`;
+  const drops = [[88, 30, 3], [14, 76, 2.4], [80, 86, 2], [22, 14, 1.6]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('');
+  return svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="${d}Z"/>${drops}</svg>`);
+})();
+
+// Canvas: fine threads one way and the other.
+const canvas = svgUrl(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><filter id="a"><feTurbulence type="fractalNoise" baseFrequency=".9 .035" numOctaves="2" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><filter id="b"><feTurbulence type="fractalNoise" baseFrequency=".035 .9" numOctaves="2" seed="5" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#a)"/><rect width="100%" height="100%" filter="url(#b)" opacity=".55"/></svg>`,
+);
+
+/** Filters the painterly look draws with; placed once in the page. */
+export const lookDefs = (look: Look): string =>
+  look !== 'painterly'
+    ? ''
+    : `<svg class="defs" width="0" height="0" aria-hidden="true" focusable="false">
+<filter id="lk-paint" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB"><feTurbulence type="fractalNoise" baseFrequency=".004 .07" numOctaves="3" seed="4"/><feColorMatrix type="saturate" values="0" result="streaks"/><feBlend in="streaks" in2="SourceGraphic" mode="soft-light" result="brushed"/><feComposite in="brushed" in2="SourceGraphic" operator="in" result="paint"/><feTurbulence type="turbulence" baseFrequency=".011" numOctaves="2" seed="9" result="wobble"/><feDisplacementMap in="paint" in2="wobble" scale="36" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="lk-rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="3"/><feDisplacementMap in="SourceGraphic" scale="7" xChannelSelector="R" yChannelSelector="G"/></filter>
+</svg>`;
+
+const CARDS = ':is(.viz,.quirk,.moment,.ai-style,.repos li)';
+
+export const LOOK_CSS = `
+.scene .dots{display:none}
+/* Pop: a comic book. */
+.look-pop .slide{--k:${INK};--ks:${INK}}
+.look-pop .slide.data{--k:${CREAM};--ks:var(--accent)}
+.look-pop .scene .s{filter:drop-shadow(calc(1.3 * var(--u)) calc(1.3 * var(--u)) 0 var(--k))}
+.look-pop .scene .s:not(.tri):not(.ring) b{box-shadow:inset 0 0 0 max(4px,calc(.7 * var(--u))) var(--k)}
+.look-pop .scene .dots{display:block;position:absolute;left:0;top:0;width:calc(56 * var(--u));height:calc(56 * var(--u));background:var(--s2);opacity:0;
+  -webkit-mask:${dots} no-repeat 0 0/100% 100%;mask:${dots} no-repeat 0 0/100% 100%;transition:opacity .6s ease .2s}
+.look-pop .in .scene .dots{opacity:.9}
+.look-pop ${CARDS}{border:3px solid var(--k);border-radius:8px;box-shadow:6px 6px 0 var(--ks)}
+.look-pop .chip{border:2px solid var(--k)}
+.look-pop .kicker{align-self:flex-start;padding:6px 12px;background:var(--accent);color:var(--bg);border:3px solid var(--k);box-shadow:4px 4px 0 var(--k);rotate:-1.5deg}
+.look-pop :is(h1,h2,.big,.quirk-big,.ai-name){font-family:'${HEADLINE_FAMILY}',var(--display);font-weight:400;letter-spacing:.01em;text-transform:uppercase;text-shadow:.05em .05em 0 var(--s1)}
+.look-pop .big{line-height:1}
+.look-pop :is(.face,.ai-emoji) .art{filter:drop-shadow(6px 6px 0 var(--k))}
+.look-pop .burst{inset:-30%;border:0;border-radius:0;box-shadow:none;background:var(--s1);clip-path:polygon(${star})}
+.look-pop .slide.active:not(.settled):not(.first){animation:open-pop .62s cubic-bezier(.8,0,.15,1) both}
+.look-pop .slide.active.back:not(.settled):not(.first){animation-name:open-pop-back}
+@keyframes open-pop{from{clip-path:polygon(130% 0,130% 0,130% 100%,160% 100%)}to{clip-path:polygon(-30% 0,130% 0,130% 100%,0 100%)}}
+@keyframes open-pop-back{from{clip-path:polygon(-30% 0,-30% 0,-60% 100%,-30% 100%)}to{clip-path:polygon(-30% 0,130% 0,100% 100%,-30% 100%)}}
+.look-pop .slide.leaving .inner{transform:translateX(-6%) rotate(-1.5deg);opacity:.3;transition-duration:.62s}
+/* Painterly: paint on canvas. */
+.look-painterly .grain{opacity:.5;mix-blend-mode:multiply;background:${canvas}}
+.look-painterly .scene{filter:url(#lk-paint)}
+.look-painterly .scene .s b{animation:none}
+.look-painterly ${CARDS}{position:relative;isolation:isolate;background:none;border:0}
+.look-painterly ${CARDS}::before{content:'';position:absolute;inset:0;z-index:-1;border-radius:inherit;background:var(--glass);filter:url(#lk-rough)}
+.look-painterly .kicker{align-self:flex-start;position:relative;isolation:isolate;padding:3px 10px;color:var(--ink)}
+.look-painterly .kicker::before{content:'';position:absolute;inset:-3px -6px;z-index:-1;border-radius:4px;rotate:-1.2deg;background:color-mix(in srgb,var(--s1) 72%,var(--bg));filter:url(#lk-rough)}
+.look-painterly :is(.face,.ai-emoji) .art{filter:url(#lk-rough)}
+.look-painterly .slide.active:not(.settled):not(.first){clip-path:none;animation:open-paint 1.15s cubic-bezier(.45,0,.2,1) both;
+  -webkit-mask:${blot} no-repeat;mask:${blot} no-repeat}
+@keyframes open-paint{
+  from{-webkit-mask-size:0 0;mask-size:0 0;-webkit-mask-position:var(--ox,50%) var(--oy,50%);mask-position:var(--ox,50%) var(--oy,50%)}
+  to{-webkit-mask-size:330vmax 330vmax;mask-size:330vmax 330vmax;-webkit-mask-position:calc(var(--ox,50vw) - 165vmax) calc(var(--oy,50vh) - 165vmax);mask-position:calc(var(--ox,50vw) - 165vmax) calc(var(--oy,50vh) - 165vmax)}}
+.look-painterly .slide.leaving .inner{transform:scale(.97);opacity:.25;transition-duration:1.1s}
+/* Small phones: thinner comic lines, so every page still fits one screen. */
+@media (max-width:560px) and (max-height:760px){.look-pop ${CARDS}{border-width:2px;box-shadow:4px 4px 0 var(--ks)}.look-pop .kicker{padding:1px 6px;border-width:2px;box-shadow:3px 3px 0 var(--k)}.look-pop .chip{border:0}
+  .look-painterly .kicker{padding:1px 6px}.look-pop .kicker,.look-painterly .kicker{margin-bottom:4px}}
+/* Phones get the looks without the costly filters. */
+@media (max-width:760px),(pointer:coarse){.look-painterly .scene,.look-painterly .art,.look-painterly ${CARDS}::before,.look-painterly .kicker::before{filter:none}}
+@media (prefers-reduced-motion:reduce){.look-pop .slide.active,.look-painterly .slide.active{animation:none!important;clip-path:none;-webkit-mask:none;mask:none}}
+`;

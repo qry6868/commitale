@@ -5,6 +5,7 @@ import { strings } from '../src/i18n.ts';
 import { CARD_SIZES, renderCard, type CardFormat } from '../src/render/card.ts';
 import { renderHtml } from '../src/render/html.ts';
 import { icon, type FunIcon, type MomentIcon } from '../src/render/icons.ts';
+import { LOOKS } from '../src/render/looks.ts';
 import { renderPoster } from '../src/render/poster.ts';
 import { change, computeStats, type PersonaId } from '../src/stats.ts';
 import type { Commit } from '../src/types.ts';
@@ -106,6 +107,9 @@ for (const lang of ['en', 'zh'] as const) {
         // (The share images on the last page keep their own look.)
         const pages = html.slice(0, html.lastIndexOf('<section class="slide'));
         assert.doesNotMatch(pages, /[🌅🌙💥🏁]|#86efac|#fda4af|#3987e5/u, `${persona} no emoji icons or off-palette colours`);
+        // Each personality's report is drawn in its own look; only the painterly one needs filters.
+        assert.ok(html.includes(`<body class="look-${LOOKS[persona]}">`), `${persona} look`);
+        assert.equal(html.includes('id="lk-paint"'), LOOKS[persona] === 'painterly', `${persona} paint filters`);
         const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
         assert.equal(new Set(ids).size, ids.length, `${persona} page ids are unique`);
       }

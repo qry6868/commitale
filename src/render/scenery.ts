@@ -161,7 +161,9 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
       `--s1:${pair[0]}`,
       `--s2:${pair[1]}`,
     ].join(';');
-    return { style, tone: t, shapes: shapes.map((s, i) => shape(s, pair[s.colour], i)).join('') };
+    // Halftone dots in the free corner, for the comic look; hidden in the others.
+    const dots = kind === 'data' ? '' : '<i class="dots"></i>';
+    return { style, tone: t, shapes: dots + shapes.map((s, i) => shape(s, pair[s.colour], i)).join('') };
   });
 }
 
