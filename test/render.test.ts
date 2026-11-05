@@ -4,6 +4,7 @@ import { escapeXml as esc } from '../src/format.ts';
 import { strings } from '../src/i18n.ts';
 import { CARD_SIZES, renderCard, type CardFormat } from '../src/render/card.ts';
 import { renderHtml } from '../src/render/html.ts';
+import { icon, type FunIcon, type MomentIcon } from '../src/render/icons.ts';
 import { renderPoster } from '../src/render/poster.ts';
 import { change, computeStats, type PersonaId } from '../src/stats.ts';
 import type { Commit } from '../src/types.ts';
@@ -100,9 +101,21 @@ for (const lang of ['en', 'zh'] as const) {
         assert.equal(kinds.length, [...html.matchAll(/<section class="slide/g)].length, `${persona} every page has a backdrop`);
         assert.ok(kinds[0] === 'field' && kinds.includes('data') && kinds.filter((k) => k === 'stage').length === 1, `${persona} page kinds ${kinds}`);
         assert.doesNotMatch(html, /(linear|radial)-gradient\(/, `${persona} has no gradients`);
+        // Moments and quirks carry drawn icons, and the charts keep to the palette.
+        assert.ok([...html.matchAll(/<div class="moment[^"]*"[^>]*>\s*<span class="icon"><svg class="ico"/g)].length >= 3, `${persona} moment icons`);
+        // (The share images on the last page keep their own look.)
+        const pages = html.slice(0, html.lastIndexOf('<section class="slide'));
+        assert.doesNotMatch(pages, /[🌅🌙💥🏁]|#86efac|#fda4af|#3987e5/u, `${persona} no emoji icons or off-palette colours`);
         const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
         assert.equal(new Set(ids).size, ids.length, `${persona} page ids are unique`);
       }
     }
   });
 }
+
+test('every fun fact and moment has its own drawn icon', () => {
+  const ids: FunIcon[] = ['fridayNight', 'reverts', 'typos', 'wip', 'tiny', 'fixStreak', 'session', 'newYear', 'valentine', 'aprilFools', 'halloween', 'christmasEve', 'newYearsEve'];
+  const marks = [...ids, ...(['first', 'latest', 'biggest', 'last'] as MomentIcon[])].map(icon);
+  assert.ok(marks.every((m) => m.startsWith('<svg class="ico"') && !/NaN|undefined/.test(m)));
+  assert.equal(new Set(marks).size, marks.length, 'no two icons look alike');
+});

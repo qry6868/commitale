@@ -1,5 +1,5 @@
 import type { PersonaId } from '../stats.ts';
-import { BLUE, CREAM, GREEN, INK, NAVY, NIGHT, ORANGE, PINK, PLUM, RED, TEAL, tone, YELLOW } from './palette.ts';
+import { BLUE, contrast, CREAM, GREEN, INK, NAVY, NIGHT, ORANGE, PINK, PLUM, RED, TEAL, tone, YELLOW } from './palette.ts';
 
 /**
  * The report's backdrops, in the badges' flat print style. Two kinds of page alternate,
@@ -92,6 +92,19 @@ const DATA: Shape[][] = [
     { form: 'circle', w: '24vmin', at: { right: '-9vmin', top: '-9vmin' }, from: '12vmin, -12vmin', colour: 0 },
     { form: 'bar', w: '22vw', h: '1.6vmin', at: { left: '0', bottom: '5vh' }, from: '-24vw, 0', colour: 1 },
   ],
+  [
+    { form: 'ring', w: '20vmin', at: { left: '-7vmin', top: '-7vmin' }, from: '-12vmin, -12vmin', colour: 0 },
+    { form: 'square', w: '6vmin', at: { right: '5vw', bottom: '8vh' }, rotate: -10, from: '0, 20vmin', colour: 1 },
+  ],
+  [
+    // Turned over, the quarter tucks into the bottom-left corner instead.
+    { form: 'quarter', w: '22vmin', at: { left: '0', bottom: '0' }, rotate: 180, from: '-12vmin, 12vmin', colour: 0 },
+    { form: 'bar', w: '1.6vmin', h: '30vh', at: { right: '6vw', top: '0' }, from: '0, -30vh', colour: 1 },
+  ],
+  [
+    { form: 'tri', w: '16vmin', at: { right: '4vw', top: '-2vmin' }, rotate: 180, from: '0, -20vmin', colour: 0 },
+    { form: 'circle', w: '5vmin', at: { left: '5vw', bottom: '10vh' }, from: '-16vmin, 0', colour: 1 },
+  ],
 ];
 
 // The reveal: a sunrise of a half-disc behind the badge, and a ring.
@@ -126,6 +139,10 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
     if (kind === 'data') data++;
     // On data pages the highlight is the personality's colour; on fields, the ink.
     const hi = kind === 'data' ? c.key : ink;
+    const accent = kind === 'data' ? c.key : ink;
+    // For small icons on an accent tile: the palette colour that stands out most on the
+    // tile while still parting from the page colour drawn next to it.
+    const pop = others.filter((x) => x !== accent && contrast(x, bg) >= 1.5).sort((a, b) => contrast(b, accent) - contrast(a, accent))[0] ?? CREAM;
     const rgb = t === 'light' ? '22,22,29' : '243,235,221';
     const style = [
       `--bg:${bg}`,
@@ -136,7 +153,11 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
       `--line:rgba(${rgb},.14)`,
       `--bar:rgba(${rgb},.26)`,
       `--hi:${hi}`,
-      `--accent:${kind === 'data' ? c.key : ink}`,
+      `--accent:${accent}`,
+      `--pop:${pop}`,
+      // Lines added and removed: green and red where charts are, the ink on a colour field.
+      `--plus:${kind === 'data' ? GREEN : ink}`,
+      `--minus:${kind === 'data' ? RED : ink}`,
       `--s1:${pair[0]}`,
       `--s2:${pair[1]}`,
     ].join(';');

@@ -1,11 +1,12 @@
-import { calendar, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
+import { calendar, escapeXml as esc, fmt, heatLevels, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
-import { change, type CommitType, type FunFact, type Holiday, type Moment, type PersonaId, type Wrapped } from '../stats.ts';
+import { change, type CommitType, type Moment, type PersonaId, type Wrapped } from '../stats.ts';
 import { CARD_SIZES, FONT, type CardFormat } from './card.ts';
 import { ART_CSS, aiArt, personaArt } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
-import { NIGHT } from './palette.ts';
+import { icon, ICON_CSS, type MomentIcon } from './icons.ts';
+import { BLUE, NIGHT, PINK, PLUM, RED, TEAL, YELLOW } from './palette.ts';
 import { SCENERY_CSS, scenery, type Kind } from './scenery.ts';
 
 const LINES_PER_PAGE = 50;
@@ -62,7 +63,8 @@ export function renderHtml(w: Wrapped, t: Strings, cards: Cards): string {
 <style>${FONT_FACE}
 ${CSS}
 ${ART_CSS}
-${SCENERY_CSS}</style>
+${SCENERY_CSS}
+${ICON_CSS}</style>
 </head>
 <body>
 <div class="grain" aria-hidden="true"></div>
@@ -219,18 +221,18 @@ function rhythm(w: Wrapped, t: Strings): string {
 }
 
 function moments(w: Wrapped, t: Strings): string {
-  const card = (icon: string, label: string, m: Moment, d: number, extra = ''): string => `<div class="moment" ${reveal(d)}>
-  <span class="icon" aria-hidden="true">${icon}</span>
+  const card = (id: MomentIcon, label: string, m: Moment, d: number, extra = ''): string => `<div class="moment" ${reveal(d)}>
+  <span class="icon">${icon(id)}</span>
   <div class="label">${esc(label)}</div>
   <div class="when">${esc(t.date(m.date))} · ${m.time}</div>
   ${m.subject ? `<blockquote>${esc(m.subject)}</blockquote>` : ''}
   <div class="label">${esc(m.repo)}${extra}</div>
 </div>`;
   const cards = [
-    card('🌅', t.first, w.firstCommit, 1),
-    w.latestNight ? card('🌙', t.latest, w.latestNight, 2) : '',
-    card('💥', t.biggest, w.biggestCommit, 3, ` · ${esc(t.linesN(fmt(w.biggestCommit.lines)))}`),
-    card('🏁', t.last, w.lastCommit, 4),
+    card('first', t.first, w.firstCommit, 1),
+    w.latestNight ? card('latest', t.latest, w.latestNight, 2) : '',
+    card('biggest', t.biggest, w.biggestCommit, 3, ` · ${esc(t.linesN(fmt(w.biggestCommit.lines)))}`),
+    card('last', t.last, w.lastCommit, 4),
   ].join('');
   return `<div class="kicker" ${reveal(0)}>${esc(t.momentsTitle)}</div><div class="moments">${cards}</div>`;
 }
@@ -240,11 +242,11 @@ function languages(w: Wrapped, t: Strings): string {
   const top = w.languages.slice(0, 6);
   const max = top[0].share;
   const rows = top
-    .map((l, i) => `<div class="row" ${reveal(i + 1)}><span>${esc(l.name)}</span><b><i style="width:${(l.share / max) * 100}%;background:${onDark(l.color)}"></i></b><em>${pct(l.share)}%</em></div>`)
+    .map((l, i) => `<div class="row" ${reveal(i + 1)}><span>${esc(l.name)}</span><b><i style="width:${(l.share / max) * 100}%"></i></b><em>${pct(l.share)}%</em></div>`)
     .join('');
   return `<div class="kicker" ${reveal(0)}>${esc(t.langTitle)}</div>
 <h2 ${reveal(0)}>${esc(top[0].name)}</h2>
-<div class="rows wide">${rows}</div>`;
+<div class="rows wide langs">${rows}</div>`;
 }
 
 function repos(w: Wrapped, t: Strings): string {
@@ -255,15 +257,15 @@ function repos(w: Wrapped, t: Strings): string {
   return `<div class="kicker" ${reveal(0)}>${esc(t.reposTitle)}</div><ol class="repos">${rows}</ol>`;
 }
 
-/** Fixed colours per commit type (validated categorical slots; "other" stays neutral). */
+/** Fixed colours per commit type, from the palette; "other" stays neutral. They sit on a data page. */
 const TYPE_COLORS: Record<CommitType, string> = {
-  feature: '#3987e5',
-  fix: '#d95926',
-  refactor: '#199e70',
-  docs: '#c98500',
-  test: '#d55181',
-  chore: '#008300',
-  other: '#6b6385',
+  feature: BLUE,
+  fix: RED,
+  refactor: TEAL,
+  docs: YELLOW,
+  test: PINK,
+  chore: PLUM,
+  other: 'var(--bar)',
 };
 
 function words(w: Wrapped, t: Strings): string {
@@ -293,11 +295,6 @@ function words(w: Wrapped, t: Strings): string {
 </div>`;
 }
 
-const FUN_ICONS: Record<Exclude<FunFact['id'], 'holiday' | 'emoji'> | Holiday, string> = {
-  fridayNight: '🍻', reverts: '⏪', typos: '✏️', wip: '🚧', tiny: '🤏', fixStreak: '🔁', session: '⏱️',
-  newYear: '🎆', valentine: '💘', aprilFools: '🃏', halloween: '🎃', christmasEve: '🎄', christmas: '🎄', newYearsEve: '🥂',
-};
-
 /** The year's quirks, each a big number and a wry line. Left out when fewer than two stand out. */
 function fun(w: Wrapped, t: Strings): string {
   if (w.funFacts.length < 2) return '';
@@ -305,8 +302,8 @@ function fun(w: Wrapped, t: Strings): string {
     .map((f, i) => {
       const { big, line } = t.fun(f);
       // The emoji fact's headline is already an emoji.
-      const icon = f.id === 'emoji' ? '' : FUN_ICONS[f.id === 'holiday' ? f.holiday : f.id];
-      return `<div class="quirk" ${reveal(i + 1)}>${icon ? `<span class="icon" aria-hidden="true">${icon}</span>` : ''}<div class="quirk-big${[...big].length > 5 ? ' long' : ''}">${esc(big)}</div><p>${esc(line)}</p></div>`;
+      const mark = f.id === 'emoji' ? '' : icon(f.id === 'holiday' ? f.holiday : f.id);
+      return `<div class="quirk" ${reveal(i + 1)}>${mark ? `<span class="icon">${mark}</span>` : ''}<div class="quirk-big${[...big].length > 5 ? ' long' : ''}">${esc(big)}</div><p>${esc(line)}</p></div>`;
     })
     .join('');
   return `<div class="kicker" ${reveal(0)}>${esc(t.funTitle)}</div><div class="quirks">${cards}</div>`;
@@ -416,7 +413,7 @@ function share(w: Wrapped, t: Strings, cards: Cards): string {
 
 const CSS = `
 *{box-sizing:border-box}
-:root{color-scheme:dark;--ink:#F3EBDD;--muted:rgba(243,235,221,.7);--plus:#86efac;--minus:#fda4af;--chrome:#F3EBDD}
+:root{color-scheme:dark;--ink:#F3EBDD;--muted:rgba(243,235,221,.7);--chrome:#F3EBDD}
 html,body{height:100%;overflow:hidden;background:${NIGHT}}
 body{margin:0;color:var(--ink);font-family:${FONT};--display:'${DISPLAY_FAMILY}',${FONT};-webkit-font-smoothing:antialiased;user-select:none;-webkit-tap-highlight-color:transparent}
 .slide{position:fixed;inset:0;overflow-x:hidden;overflow-y:auto;padding:56px 16px 40px;background:var(--bg);color:var(--ink);visibility:hidden;z-index:0;
@@ -593,22 +590,23 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
 .rows.days .row.peak b i{background:var(--hi)}
 .rows.days .row.peak span,.rows.days .row.peak em{color:var(--ink);font-weight:800}
 .moment{position:relative}
-.moment .icon{position:absolute;top:18px;right:20px;font-size:26px}
+.moment .icon{position:absolute;top:16px;right:18px;width:40px;height:40px;transform:rotate(-6deg)}.moment .ico{display:block;width:100%;height:100%}
+.langs .row b i{background:var(--bar)}.langs .row:first-child b i{background:var(--hi)}
 .repos .name{display:flex;flex-direction:column;gap:8px}
 .share{display:block;height:6px;border-radius:3px;background:var(--glass);overflow:hidden;max-width:420px}
 .share i{display:block;height:100%;border-radius:inherit;background:var(--hi);transform-origin:left}
 .in .share i{animation:fill .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:.4s}
 .quirks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .quirk{position:relative;padding:26px 28px;border-radius:24px;background:var(--glass);border:1px solid var(--line)}
-.quirk .icon{position:absolute;top:20px;right:22px;font-size:30px}
+.quirk .icon{position:absolute;top:20px;right:20px;width:52px;height:52px;transform:rotate(-6deg)}.quirk .ico{display:block;width:100%;height:100%}
 .quirk-big{font-family:var(--display);font-size:clamp(40px,6vw,76px);font-weight:900;line-height:1;letter-spacing:-.03em;color:var(--accent)}
-.quirk-big.long{font-size:clamp(30px,4vw,52px);padding-right:40px}
+.quirk-big.long{font-size:clamp(30px,4vw,52px);padding-right:60px}
 .quirk p{margin:12px 0 0;font-size:clamp(15px,1.9vw,20px);line-height:1.4;color:var(--muted);text-wrap:pretty}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--d,0)*120ms)}
 .in .reveal{opacity:1;transform:none}
 @media (max-width:560px){.rows.wide .row{grid-template-columns:96px 1fr 44px;font-size:16px}.repos li{grid-template-columns:32px 1fr}.meta{grid-column:2;text-align:left}
-  .moments{grid-template-columns:1fr}.stats{gap:12px 24px;margin-top:18px}.summary-actions .buttons{margin:4px 0 12px}.summary-actions .footer{display:none}.chip{padding:4px 11px}.chips{gap:8px 10px;margin-bottom:12px}.row.type{font-size:14px}.types{gap:6px}.stack{margin-bottom:12px}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}
-  .quirks{gap:10px}.quirk{padding:16px;border-radius:18px}.quirk .icon{top:12px;right:12px;font-size:18px}.quirk-big{font-size:36px}.quirk-big.long{font-size:19px;padding-right:20px;white-space:nowrap}.quirk p{font-size:14px;margin-top:8px}}
+  .moments{grid-template-columns:1fr}.stats{gap:12px 24px;margin-top:18px}.summary-actions .buttons{margin:4px 0 12px}.summary-actions .footer{display:none}.chip{padding:4px 11px}.chips{gap:8px 10px;margin-bottom:12px}.row.type{font-size:14px}.types{gap:6px}.stack{margin-bottom:12px}.col{height:150px}.col i{height:calc(var(--v) * 110px)}.col span{font-size:9px}.cols{gap:2px}.viz{padding:18px}.hero-year{font-size:44vw;bottom:-1vh}.moment{padding:14px 16px}.moment .icon{top:12px;right:12px;width:28px;height:28px}.moments{gap:10px}.when{font-size:19px;margin:4px 0 6px}blockquote{margin-bottom:6px}.months{font-size:10px}.months span:nth-child(even){visibility:hidden}
+  .quirks{gap:10px}.quirk{padding:16px;border-radius:18px}.quirk .icon{top:12px;right:12px;width:32px;height:32px}.quirk-big{font-size:36px}.quirk-big.long{font-size:19px;padding-right:20px;white-space:nowrap}.quirk p{font-size:14px;margin-top:8px}}
 /* Small phones (iPhone SE and the like): every page should fit one screen, no scrolling inside a story. */
 @media (max-width:560px) and (max-height:760px){.slide{padding:48px 16px 24px}.kicker{margin-bottom:10px}h2{margin:2px 0 12px}.split{gap:16px}
   .hours{height:100px}.ticks{margin:6px 0 10px}.rows{gap:6px}.viz .label{margin-top:8px}
