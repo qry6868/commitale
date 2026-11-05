@@ -11,6 +11,14 @@ export const BLUE = '#2D6CB5';
 export const PLUM = '#7B5EA7';
 export const PINK = '#D94F8A';
 export const GREEN = '#2F9E68';
+/** Oil colours, for the painterly look. */
+export const OCHRE = '#D19A3E';
+export const SIENNA = '#B4532F';
+export const ULTRAMARINE = '#2F3F8C';
+export const SAP = '#4E7A47';
+export const MADDER = '#8E2F3C';
+/** The painterly look's data pages: a warm, dark umber ground. */
+export const UMBER = '#1E1914';
 /** The report's data pages: near-black, a touch warm. */
 export const NIGHT = '#121219';
 

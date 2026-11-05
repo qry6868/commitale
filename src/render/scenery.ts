@@ -1,5 +1,5 @@
 import type { PersonaId } from '../stats.ts';
-import { BLUE, contrast, CREAM, GREEN, INK, NAVY, NIGHT, ORANGE, PINK, PLUM, RED, TEAL, tone, YELLOW } from './palette.ts';
+import { BLUE, contrast, CREAM, GREEN, INK, MADDER, NAVY, NIGHT, OCHRE, ORANGE, PINK, PLUM, RED, SAP, SIENNA, TEAL, tone, ULTRAMARINE, UMBER, YELLOW } from './palette.ts';
 
 /**
  * The report's backdrops, in the badges' flat print style. Two kinds of page alternate,
@@ -20,6 +20,8 @@ interface Colours {
   stage: string;
   /** The highlight on data pages: peaks, the heatmap, kickers. */
   key: string;
+  /** The data pages' ground, when not the usual near-black. */
+  ground?: string;
 }
 
 const COLOURS: Record<PersonaId, Colours> = {
@@ -31,7 +33,8 @@ const COLOURS: Record<PersonaId, Colours> = {
   cleaner: { fields: [TEAL, NAVY, YELLOW, PLUM, RED], stage: YELLOW, key: TEAL },
   polyglot: { fields: [PLUM, TEAL, YELLOW, PINK, NAVY], stage: YELLOW, key: PINK },
   nineToFive: { fields: [BLUE, YELLOW, RED, NAVY, TEAL], stage: YELLOW, key: YELLOW },
-  builder: { fields: [RED, NAVY, YELLOW, TEAL, PLUM], stage: YELLOW, key: ORANGE },
+  // Painterly: oil colours on an umber ground.
+  builder: { fields: [SIENNA, ULTRAMARINE, OCHRE, SAP, MADDER], stage: OCHRE, key: OCHRE, ground: UMBER },
 };
 
 type Form = 'circle' | 'half' | 'quarter' | 'square' | 'ring' | 'bar' | 'tri';
@@ -127,13 +130,13 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
   let field = 0;
   let data = 0;
   return kinds.map((kind) => {
-    const bg = kind === 'stage' ? c.stage : kind === 'field' ? c.fields[field % c.fields.length] : NIGHT;
+    const bg = kind === 'stage' ? c.stage : kind === 'field' ? c.fields[field % c.fields.length] : (c.ground ?? NIGHT);
     const t = kind === 'data' ? 'dark' : tone(bg);
     const ink = t === 'light' ? INK : CREAM;
     // Shape colours: anything in the palette that isn't the page itself.
     const others = [c.key, ...c.fields, c.stage].filter((x, i, all) => x !== bg && all.indexOf(x) === i);
     const pair: [string, string] =
-      kind === 'data' ? [c.key, others.find((x) => x !== c.key && x !== NAVY) ?? CREAM] : [others[field % others.length], others[(field + 1) % others.length]];
+      kind === 'data' ? [c.key, others.find((x) => x !== c.key && x !== NAVY && x !== ULTRAMARINE) ?? CREAM] : [others[field % others.length], others[(field + 1) % others.length]];
     const shapes = kind === 'stage' ? STAGE : kind === 'field' ? FIELD[field % FIELD.length] : DATA[data % DATA.length];
     if (kind === 'field') field++;
     if (kind === 'data') data++;
