@@ -63,6 +63,9 @@ for (const lang of ['en', 'zh'] as const) {
           // A square poster drops its lists when a two-line name leaves no room.
           if (f !== 'square') assert.ok(posters[f].includes(t.types.fix), `${persona} poster ${f} lists commit types`);
           assert.ok(posters[f].includes(`id="poster-${f}-bg"`), 'poster ids differ from the stats cards');
+          // Posters are flat like the report, and only paint and riso need filters.
+          assert.doesNotMatch(posters[f], /Gradient/, `${persona} poster ${f} is flat`);
+          assert.equal(/id="poster-\w+-(brush|speck)"/.test(posters[f]), ['painterly', 'riso'].includes(LOOKS[persona]), `${persona} poster ${f} filters`);
           // Names are uppercased for the headline face, and CJK names must stay on one line.
           assert.ok(posters[f].toLowerCase().includes(t.personas[persona].name.split(' ').pop()!.toLowerCase()), `${persona} poster names the personality`);
         }
