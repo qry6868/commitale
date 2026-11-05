@@ -13,7 +13,7 @@ One command. Every repo on your machine. Nothing leaves your computer.
 
 English · [简体中文](docs/README.zh-CN.md)
 
-<a href="https://qry6868.github.io/commitale/"><img src="assets/demo-poster.svg" alt="A Commitale poster card, My 2026 coding recap: when coding, I'm The Night Owl (38% of my commits landed between 10 PM and 5 AM), AI style The Pair Programmer, 653 commits, 674M AI tokens, a 41-day streak." width="760"></a>
+<a href="https://qry6868.github.io/commitale/"><img src="assets/demo-poster.svg" alt="A Commitale poster card, My 2026 coding recap: when coding, I'm The Night Owl (38% of my commits landed between 10 PM and 5 AM), AI style The Pair Programmer, 656 commits, 686M AI tokens, a 41-day streak, drawn as a risograph print." width="760"></a>
 
 **[▶ See a live demo](https://qry6868.github.io/commitale/)**: a full report on sample data, nothing to install. Or browse [every personality and AI style](https://qry6868.github.io/commitale/personalities.html) and what earns each one.
 
@@ -48,9 +48,9 @@ The report (`commitale-2026.html`) and card (`commitale-2026.svg`) are saved in 
 - **Your words.** The words you reach for most in commit messages, and how many commits were fixes.
 - **Things you might not have noticed.** The quirks of your year: commits after 6 PM on a Friday, fixes in a row, reverts, your longest session, commits on holidays.
 - **Your AI year.** The tokens you spent with Claude Code and Codex, how many sessions and days, your top models, your biggest AI day, and your [AI style](#ai-styles).
-- **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities).
+- **Your coding personality.** Night Owl, Weekend Warrior, Marathoner, Bug Hunter… see [all of them](#personalities). Each one's report and poster are drawn in its own look: flat print, pop comic, oil paint, minimal or riso print.
 - **A soundtrack.** A mellow lo-fi loop, synthesised live in your browser (no audio files), starts on your first tap. The button in the corner turns it off.
-- **Share cards in two styles and three sizes.** A bold poster or a stats card; wide for X, LinkedIn and your GitHub profile, square and vertical for Instagram, WeChat Moments and Xiaohongshu. Each personality has its own colors. Download as PNG or SVG.
+- **Share cards in two styles and three sizes.** A bold poster or a stats card; wide for X, LinkedIn and your GitHub profile, square and vertical for Instagram, WeChat Moments and Xiaohongshu. The poster takes your personality's look. Download as PNG or SVG.
 
 It runs in your terminal too:
 

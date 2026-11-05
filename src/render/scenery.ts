@@ -17,7 +17,7 @@ import {
  */
 export type Kind = 'field' | 'data' | 'stage';
 
-interface Colours {
+export interface Colours {
   /** Field pages take these in turn. */
   fields: string[];
   /** The personality page: chosen to set off the badge's own tile. */
@@ -46,6 +46,9 @@ const COLOURS: Record<PersonaId, Colours> = {
   // Painterly: oil colours on an umber ground.
   builder: { fields: [SIENNA, ULTRAMARINE, OCHRE, SAP, MADDER], stage: OCHRE, key: OCHRE, ground: UMBER },
 };
+
+/** A personality's colours, for the share posters to draw with. */
+export const coloursFor = (persona: PersonaId): Colours => COLOURS[persona];
 
 type Form = 'circle' | 'half' | 'quarter' | 'square' | 'ring' | 'bar' | 'tri';
 

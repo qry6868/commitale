@@ -772,11 +772,12 @@ document.querySelectorAll('.formats button').forEach((b) => b.addEventListener('
     c.hidden = c.dataset.style !== pick.style || c.dataset.format !== pick.format;
   });
 }));
-// Downloads are standalone files, so they carry the display font the page loaded.
-const fontFace = [...document.styleSheets]
+// Downloads are standalone files, so they carry the fonts the page loaded: the display
+// face and the headline face the posters set their names in.
+const fontFaces = [...document.styleSheets]
   .flatMap((sheet) => [...sheet.cssRules])
-  .find((rule) => rule.type === CSSRule.FONT_FACE_RULE);
-const fontStyle = fontFace ? '<style>' + fontFace.cssText + '</style>' : '';
+  .filter((rule) => rule.type === CSSRule.FONT_FACE_RULE);
+const fontStyle = fontFaces.length ? '<style>' + fontFaces.map((r) => r.cssText).join('') + '</style>' : '';
 
 function save(blob, name) {
   const a = document.createElement('a');

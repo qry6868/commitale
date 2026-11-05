@@ -13,7 +13,7 @@
 
 [English](../README.md) · 简体中文
 
-<a href="https://qry6868.github.io/commitale/zh.html"><img src="../assets/demo-poster.svg" alt="Commitale 海报卡片，我的 2026 Coding 年度报告：Coding 时，我是夜猫子（38% 的提交在晚上 10 点到凌晨 5 点之间），AI 搭档类型是结对搭档，653 次提交、6.7 亿 AI token、最长连续 41 天。" width="760"></a>
+<a href="https://qry6868.github.io/commitale/zh.html"><img src="../assets/demo-poster.svg" alt="Commitale 海报卡片，我的 2026 Coding 年度报告：Coding 时，我是夜猫子（38% 的提交在晚上 10 点到凌晨 5 点之间），AI 搭档类型是结对搭档，656 次提交、6.9 亿 AI token、最长连续 41 天，画成丝网印刷风格。" width="760"></a>
 
 **[▶ 在线看示例报告](https://qry6868.github.io/commitale/zh.html)**：用示例数据生成的完整报告，无需安装。也可以看看[全部编程人格和 AI 搭档类型](https://qry6868.github.io/commitale/zh-personalities.html)，以及怎样才能拿到。
 
@@ -48,9 +48,9 @@
 - **提交信息词云**：你最常用的词，以及有多少次提交是在修 bug。
 - **你可能没注意到的**：这一年的“梗”：周五下班后的提交、连续 fix、回滚、最长的一次连续 Coding、节假日里的提交。
 - **你的 AI 编程年**：今年在 Claude Code 和 Codex 上消耗了多少 token、多少个会话和天数、最常用的模型、用 AI 最多的一天，以及你的 [AI 搭档类型](#ai-搭档类型)。
-- **编程人格**：夜猫子、周末战士、马拉松选手、捉虫猎人……见[全部人格](#编程人格)。
+- **编程人格**：夜猫子、周末战士、马拉松选手、捉虫猎人……见[全部人格](#编程人格)。每种人格的报告和海报都有自己的视觉风格：几何构成、波普漫画、油画笔触、极简或丝网印刷。
 - **背景音乐**：一段在浏览器里实时合成的 lo-fi 循环音乐（没有音频文件），第一次点击时开始播放，右上角的按钮可以关掉。
-- **两种风格、三种尺寸的分享卡片**：醒目的海报风或信息完整的数据风；横版适合 X、LinkedIn 和 GitHub 个人主页，方形和竖版适合朋友圈、小红书和 Instagram。每种编程人格都有自己的配色，支持下载 PNG 和 SVG。
+- **两种风格、三种尺寸的分享卡片**：醒目的海报风或信息完整的数据风；横版适合 X、LinkedIn 和 GitHub 个人主页，方形和竖版适合朋友圈、小红书和 Instagram。海报会用你的编程人格的视觉风格，支持下载 PNG 和 SVG。
 
 终端里也能直接看：
 
