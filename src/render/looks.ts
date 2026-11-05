@@ -7,19 +7,22 @@ import { CREAM, INK } from './palette.ts';
  * and colours, drawn in a different hand. **Geometric** is flat print shapes; **pop** is a
  * comic book, with ink outlines, hard shadows, halftone dots and pages that slash in like
  * panels; **painterly** is paint on canvas, with brushed edges and pages that bleed open
- * like wet paint. Heavy filters are left out on phones, so pages stay smooth there.
+ * like wet paint; **minimal** is paper and one ink, light type and hairlines, with pages
+ * that cross-fade; **riso** is fluorescent ink on paper stock, slightly off register, with
+ * pages that feed in like paper. Heavy filters are left out on phones, so pages stay
+ * smooth there.
  */
-export type Look = 'geometric' | 'pop' | 'painterly';
+export type Look = 'geometric' | 'pop' | 'painterly' | 'minimal' | 'riso';
 
 export const LOOKS: Record<PersonaId, Look> = {
-  nightOwl: 'geometric',
-  earlyBird: 'geometric',
+  nightOwl: 'riso',
+  earlyBird: 'minimal',
   weekendWarrior: 'pop',
   marathoner: 'geometric',
   bugHunter: 'pop',
   cleaner: 'geometric',
-  polyglot: 'geometric',
-  nineToFive: 'geometric',
+  polyglot: 'riso',
+  nineToFive: 'minimal',
   builder: 'painterly',
 };
 
@@ -64,6 +67,11 @@ const blot = (() => {
 // Canvas: fine threads one way and the other.
 const canvas = svgUrl(
   `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240"><filter id="a"><feTurbulence type="fractalNoise" baseFrequency=".9 .035" numOctaves="2" seed="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><filter id="b"><feTurbulence type="fractalNoise" baseFrequency=".035 .9" numOctaves="2" seed="5" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="100%" height="100%" filter="url(#a)"/><rect width="100%" height="100%" filter="url(#b)" opacity=".55"/></svg>`,
+);
+
+// Riso: specks where the drum laid a little too much ink.
+const speckle = svgUrl(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="s"><feTurbulence type="fractalNoise" baseFrequency=".75" numOctaves="2" seed="11" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -20 0 0 0 6.6"/></filter><rect width="100%" height="100%" filter="url(#s)"/></svg>`,
 );
 
 /** Filters the painterly look draws with; placed once in the page. */
@@ -127,10 +135,45 @@ export const LOOK_CSS = `
   from{-webkit-mask-size:0 0;mask-size:0 0;-webkit-mask-position:var(--ox,50%) var(--oy,50%);mask-position:var(--ox,50%) var(--oy,50%)}
   to{-webkit-mask-size:330vmax 330vmax;mask-size:330vmax 330vmax;-webkit-mask-position:calc(var(--ox,50vw) - 165vmax) calc(var(--oy,50vh) - 165vmax);mask-position:calc(var(--ox,50vw) - 165vmax) calc(var(--oy,50vh) - 165vmax)}}
 .look-painterly .slide.leaving .inner{transform:scale(.97);opacity:.25;transition-duration:1.1s}
+/* Minimal: paper, one ink and a lot of room. */
+.look-minimal .grain{opacity:.08}
+.look-minimal :is(h1,h2,.big,.quirk-big,.ai-name,.fact,.when){font-family:inherit;font-weight:300;letter-spacing:-.035em}
+.look-minimal .big{font-weight:200;letter-spacing:-.05em}
+.look-minimal .kicker{display:flex;align-items:center;gap:14px;color:var(--s1);font-size:13px;font-weight:600;letter-spacing:.24em}
+.look-minimal .kicker::before{content:'';width:32px;height:1px;background:currentColor}
+.look-minimal ${CARDS}{padding-left:0;padding-right:0;background:none;border:0;border-top:1px solid var(--line);border-radius:0}
+.look-minimal .chip{background:none;border:1px solid var(--line)}
+.look-minimal .slide .delta{background:none;color:var(--s1);border:1px solid currentColor}
+.look-minimal .row b{height:4px}.look-minimal .rows.wide .row b{height:6px}
+.look-minimal .heat i{border-radius:50%}
+.look-minimal :is(.hours i,.col i,.stack i,.ratio i){border-radius:0}
+.look-minimal .burst{border-width:1px;box-shadow:none}.look-minimal .sparks{display:none}
+.look-minimal .slide:not(.in) .reveal{transform:translateY(10px)}
+.look-minimal .slide:not(.data){--hi:var(--s1)}
+/* Pages cross-fade, unhurried. */
+.look-minimal .slide.active:not(.settled):not(.first){clip-path:none;animation:open-fade .9s cubic-bezier(.3,0,.2,1) both}
+@keyframes open-fade{from{opacity:0}}
+.look-minimal .slide.leaving .inner{transform:translateY(-10px);opacity:0;transition-duration:.5s}
+/* Riso: fluorescent inks on paper stock, a little off register. */
+.look-riso .grain{opacity:.22;mix-blend-mode:multiply;background:${speckle}}
+.look-riso .slide:not(.data) .scene .s{mix-blend-mode:multiply}
+.look-riso .scene .s{filter:drop-shadow(calc(1.1 * var(--u)) calc(-.7 * var(--u)) 0 color-mix(in srgb,var(--c2) 80%,transparent))}
+.look-riso :is(h1,h2,.big,.quirk-big,.ai-name){text-shadow:.035em -.025em 0 color-mix(in srgb,var(--s1) 75%,transparent)}
+.look-riso .kicker{align-self:flex-start;padding:0 4px;color:var(--ink);box-shadow:inset 0 -.55em 0 color-mix(in srgb,var(--s1) 55%,transparent)}
+.look-riso ${CARDS}{background:color-mix(in srgb,var(--s1) 16%,var(--bg));border:0;border-radius:3px}
+.look-riso .slide.data ${CARDS}{background:var(--glass)}
+.look-riso :is(.face,.ai-emoji) .art{filter:drop-shadow(5px -3px 0 color-mix(in srgb,var(--s1) 70%,transparent))}
+/* Pages feed in like paper through the drum, and settle with a jog of the registration. */
+.look-riso .slide.active:not(.settled):not(.first){clip-path:none;animation:open-feed .75s cubic-bezier(.7,0,.2,1) both}
+.look-riso .slide.active.back:not(.settled):not(.first){animation-name:open-feed-back}
+@keyframes open-feed{0%{transform:translateY(-102%)}80%{transform:translateY(0)}88%{transform:translateX(-.5%)}95%{transform:translateX(.25%)}100%{transform:none}}
+@keyframes open-feed-back{0%{transform:translateY(102%)}80%{transform:translateY(0)}88%{transform:translateX(.5%)}95%{transform:translateX(-.25%)}100%{transform:none}}
+.look-riso .slide.leaving .inner{transform:translateY(3%);opacity:.35;transition-duration:.7s}
 /* Small phones: thinner comic lines, so every page still fits one screen. */
 @media (max-width:560px) and (max-height:760px){.look-pop ${CARDS}{border-width:2px;box-shadow:4px 4px 0 var(--ks)}.look-pop .kicker{padding:1px 6px;border-width:2px;box-shadow:3px 3px 0 var(--k)}.look-pop .chip{border:0}
-  .look-painterly .kicker{padding:1px 6px}.look-pop .kicker,.look-painterly .kicker{margin-bottom:4px}}
+  .look-painterly .kicker{padding:1px 6px}.look-pop .kicker,.look-painterly .kicker,.look-riso .kicker{margin-bottom:4px}
+  .look-minimal .kicker{gap:10px;letter-spacing:.16em;margin-bottom:6px}.look-minimal .kicker::before{width:18px}.look-minimal .chip{border:0;padding-left:0}}
 /* Phones get the looks without the costly filters. */
 @media (max-width:760px),(pointer:coarse){.look-painterly .scene,.look-painterly .art,.look-painterly ${CARDS}::before,.look-painterly .kicker::before,.look-painterly :is(.hours,.heat,.ratio,.stack,.col i,.row b i,.share i){filter:none}}
-@media (prefers-reduced-motion:reduce){.look-pop .slide.active,.look-painterly .slide.active{animation:none!important;clip-path:none;-webkit-mask:none;mask:none}}
+@media (prefers-reduced-motion:reduce){:is(.look-pop,.look-painterly,.look-minimal,.look-riso) .slide.active{animation:none!important;clip-path:none;-webkit-mask:none;mask:none}}
 `;

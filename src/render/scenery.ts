@@ -1,5 +1,9 @@
 import type { PersonaId } from '../stats.ts';
-import { BLUE, contrast, CREAM, GREEN, INK, MADDER, NAVY, NIGHT, OCHRE, ORANGE, PINK, PLUM, RED, SAP, SIENNA, TEAL, tone, ULTRAMARINE, UMBER, YELLOW } from './palette.ts';
+import { LOOKS } from './looks.ts';
+import {
+  BLUE, contrast, CREAM, GREEN, INK, MADDER, MIDNIGHT, MIST, NAVY, NIGHT, OCHRE, ORANGE, PAPER, PLUM, RED, RISO_BLUE, RISO_INK, RISO_ORANGE, RISO_PINK, RISO_TEAL,
+  RISO_YELLOW, SAND, SAP, SIENNA, SNOW, STOCK, STOCK_BLUE, STOCK_PINK, STOCK_YELLOW, TEAL, tone, ULTRAMARINE, UMBER, VERMILION, YELLOW,
+} from './palette.ts';
 
 /**
  * The report's backdrops, in the badges' flat print style. Two kinds of page alternate,
@@ -22,17 +26,23 @@ interface Colours {
   key: string;
   /** The data pages' ground, when not the usual near-black. */
   ground?: string;
+  /** Text on light pages, when not black. */
+  ink?: string;
+  /** The shapes' colours on fields, when not the rest of the palette. */
+  inks?: string[];
 }
 
 const COLOURS: Record<PersonaId, Colours> = {
-  nightOwl: { fields: [NAVY, RED, PLUM, BLUE, TEAL], stage: YELLOW, key: YELLOW },
-  earlyBird: { fields: [ORANGE, PINK, NAVY, RED, YELLOW], stage: NAVY, key: ORANGE },
+  // Riso: fluorescent inks on paper stocks, text in blue ink, data on dark blue stock.
+  nightOwl: { fields: [STOCK, STOCK_BLUE, STOCK_PINK, STOCK, STOCK_YELLOW], stage: STOCK_YELLOW, key: RISO_YELLOW, ground: MIDNIGHT, ink: RISO_INK, inks: [RISO_PINK, RISO_BLUE, RISO_TEAL] },
+  // Minimal: paper and a single ink.
+  earlyBird: { fields: [PAPER, SAND, PAPER, MIST, PAPER], stage: PAPER, key: VERMILION, ground: SNOW },
   weekendWarrior: { fields: [RED, NAVY, YELLOW, PLUM, ORANGE], stage: YELLOW, key: RED },
   marathoner: { fields: [GREEN, NAVY, YELLOW, TEAL, RED], stage: YELLOW, key: GREEN },
   bugHunter: { fields: [YELLOW, RED, NAVY, PLUM, ORANGE], stage: NAVY, key: YELLOW },
   cleaner: { fields: [TEAL, NAVY, YELLOW, PLUM, RED], stage: YELLOW, key: TEAL },
-  polyglot: { fields: [PLUM, TEAL, YELLOW, PINK, NAVY], stage: YELLOW, key: PINK },
-  nineToFive: { fields: [BLUE, YELLOW, RED, NAVY, TEAL], stage: YELLOW, key: YELLOW },
+  polyglot: { fields: [STOCK, STOCK_PINK, STOCK_BLUE, STOCK_YELLOW, STOCK], stage: STOCK_YELLOW, key: RISO_PINK, ground: MIDNIGHT, ink: RISO_INK, inks: [RISO_PINK, RISO_TEAL, RISO_ORANGE, RISO_BLUE] },
+  nineToFive: { fields: [PAPER, MIST, PAPER, SAND, PAPER], stage: MIST, key: BLUE, ground: SNOW },
   // Painterly: oil colours on an umber ground.
   builder: { fields: [SIENNA, ULTRAMARINE, OCHRE, SAP, MADDER], stage: OCHRE, key: OCHRE, ground: UMBER },
 };
@@ -110,6 +120,36 @@ const DATA: Shape[][] = [
   ],
 ];
 
+// Minimal: one small sun and a hairline, with room to breathe.
+const HAIR = '.24vmin';
+const FIELD_MIN: Shape[][] = [
+  [
+    { form: 'circle', w: '15vmin', at: { right: '14vw', top: '18vh' }, from: '0, 8vmin', colour: 0 },
+    { form: 'bar', w: '34vw', h: HAIR, at: { right: '0', bottom: '22vh' }, from: '20vw, 0', colour: 1 },
+  ],
+  [
+    { form: 'circle', w: '8vmin', at: { left: '7vw', bottom: '12vh' }, from: '0, 8vmin', colour: 0 },
+    { form: 'bar', w: HAIR, h: '38vh', at: { right: '12vw', top: '0' }, from: '0, -20vh', colour: 1 },
+  ],
+  [
+    { form: 'half', w: '26vmin', h: '13vmin', at: { right: '10vw', bottom: '0' }, from: '0, 14vmin', colour: 0 },
+    { form: 'bar', w: '22vw', h: HAIR, at: { left: '0', top: '20vh' }, from: '-20vw, 0', colour: 1 },
+  ],
+];
+const DATA_MIN: Shape[][] = [
+  [{ form: 'circle', w: '3vmin', at: { right: '8vw', top: '12vh' }, from: '0, -8vmin', colour: 0 }],
+  [{ form: 'bar', w: '18vw', h: HAIR, at: { left: '0', bottom: '8vh' }, from: '-18vw, 0', colour: 1 }],
+  [
+    { form: 'circle', w: '2.4vmin', at: { left: '6vw', bottom: '10vh' }, from: '0, 8vmin', colour: 0 },
+    { form: 'bar', w: HAIR, h: '20vh', at: { right: '6vw', top: '0' }, from: '0, -20vh', colour: 1 },
+  ],
+];
+// A sun on the horizon behind the badge.
+const STAGE_MIN: Shape[] = [
+  { form: 'circle', w: '30vmin', at: { right: '6vw', bottom: '50vh' }, from: '0, 12vmin', colour: 0 },
+  { form: 'bar', w: '40vw', h: HAIR, at: { right: '0', bottom: '50vh' }, from: '40vw, 0', colour: 1 },
+];
+
 // The reveal: a sunrise of a half-disc behind the badge, and a ring.
 const STAGE: Shape[] = [
   { form: 'half', w: '84vmin', h: '42vmin', at: { right: '-26vmin', bottom: '-1vmin' }, from: '0, 50vmin', colour: 0 },
@@ -127,17 +167,24 @@ export interface Scene {
 /** A backdrop for each page, in order. */
 export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
   const c = COLOURS[persona];
+  const minimal = LOOKS[persona] === 'minimal';
   let field = 0;
   let data = 0;
   return kinds.map((kind) => {
     const bg = kind === 'stage' ? c.stage : kind === 'field' ? c.fields[field % c.fields.length] : (c.ground ?? NIGHT);
-    const t = kind === 'data' ? 'dark' : tone(bg);
-    const ink = t === 'light' ? INK : CREAM;
+    const t = tone(bg);
+    const ink = t === 'light' ? (c.ink ?? INK) : CREAM;
+    const rgb = [1, 3, 5].map((i) => parseInt(ink.slice(i, i + 2), 16)).join(',');
     // Shape colours: anything in the palette that isn't the page itself.
     const others = [c.key, ...c.fields, c.stage].filter((x, i, all) => x !== bg && all.indexOf(x) === i);
-    const pair: [string, string] =
-      kind === 'data' ? [c.key, others.find((x) => x !== c.key && x !== NAVY && x !== ULTRAMARINE) ?? CREAM] : [others[field % others.length], others[(field + 1) % others.length]];
-    const shapes = kind === 'stage' ? STAGE : kind === 'field' ? FIELD[field % FIELD.length] : DATA[data % DATA.length];
+    const inks = c.inks ?? others;
+    const pair: [string, string] = minimal
+      ? [c.key, `rgba(${rgb},.4)`]
+      : kind === 'data'
+        ? [c.key, inks.find((x) => x !== c.key && x !== NAVY && x !== ULTRAMARINE && x !== RISO_BLUE) ?? CREAM]
+        : [inks[field % inks.length], inks[(field + 1) % inks.length]];
+    const sets = minimal ? { stage: STAGE_MIN, field: FIELD_MIN, data: DATA_MIN } : { stage: STAGE, field: FIELD, data: DATA };
+    const shapes = kind === 'stage' ? sets.stage : kind === 'field' ? sets.field[field % sets.field.length] : sets.data[data % sets.data.length];
     if (kind === 'field') field++;
     if (kind === 'data') data++;
     // On data pages the highlight is the personality's colour; on fields, the ink.
@@ -146,7 +193,6 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
     // For small icons on an accent tile: the palette colour that stands out most on the
     // tile while still parting from the page colour drawn next to it.
     const pop = others.filter((x) => x !== accent && contrast(x, bg) >= 1.5).sort((a, b) => contrast(b, accent) - contrast(a, accent))[0] ?? CREAM;
-    const rgb = t === 'light' ? '22,22,29' : '243,235,221';
     const style = [
       `--bg:${bg}`,
       `--ink:${ink}`,
@@ -166,19 +212,19 @@ export function scenery(persona: PersonaId, kinds: Kind[]): Scene[] {
     ].join(';');
     // Halftone dots in the free corner, for the comic look; hidden in the others.
     const dots = kind === 'data' ? '' : '<i class="dots"></i>';
-    return { style, tone: t, shapes: dots + shapes.map((s, i) => shape(s, pair[s.colour], i)).join('') };
+    return { style, tone: t, shapes: dots + shapes.map((s, i) => shape(s, pair[s.colour], pair[1 - s.colour], i)).join('') };
   });
 }
 
 /** Shapes are sized in vmin, scaled down on portrait screens, where vmin is the whole width. */
 const unit = (css: string): string => css.replace(/(-?[0-9.]+)vmin/g, (_, n) => `calc(${n} * var(--u))`);
 
-function shape(s: Shape, colour: string, i: number): string {
+function shape(s: Shape, colour: string, other: string, i: number): string {
   const at = Object.entries(s.at).map(([k, v]) => `${k}:${unit(v)}`).join(';');
   const h = s.h ? `;--h:${unit(s.h)}` : '';
   // Each shape drifts on its own clock, so the page never moves in lockstep.
   const drift = `--dur:${14 + i * 5}s;--dx:${i % 2 ? -1.4 : 1.4}vmin;--dy:${i % 2 ? 1.2 : -1.2}vmin`;
-  return `<i class="s ${s.form}" style="--w:${unit(s.w)}${h};${at};--r:${s.rotate ?? 0}deg;--from:${unit(s.from)};--c:${colour};--sd:${0.08 + i * 0.12}s;${drift}"><b></b></i>`;
+  return `<i class="s ${s.form}" style="--w:${unit(s.w)}${h};${at};--r:${s.rotate ?? 0}deg;--from:${unit(s.from)};--c:${colour};--c2:${other};--sd:${0.08 + i * 0.12}s;${drift}"><b></b></i>`;
 }
 
 /** The shapes' look and motion. Pages give `.in` once they open, which brings the shapes in. */
