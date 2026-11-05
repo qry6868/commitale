@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AI_STYLES, renderGallery, TIER_EXAMPLES } from '../scripts/gallery.ts';
+import { AI_STYLES, PERSONAS, renderGallery, sampleFile, TIER_EXAMPLES } from '../scripts/gallery.ts';
+import { LOOKS } from '../src/render/looks.ts';
 import { aiStyle } from '../src/ai.ts';
 import { strings } from '../src/i18n.ts';
 import type { Wrapped } from '../src/stats.ts';
@@ -19,5 +20,14 @@ for (const lang of ['en', 'zh'] as const) {
     const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
     assert.equal(ids.length, 9 + 5 + 1, 'one tile per badge, plus the globe');
     assert.equal(new Set(ids).size, ids.length);
+  });
+}
+
+for (const lang of ['en', 'zh'] as const) {
+  test(`every personality links to a sample report in its own look (${lang})`, () => {
+    const html = renderGallery(lang, 'https://example.com');
+    for (const id of PERSONAS) assert.ok(html.includes(`href="${sampleFile(lang, id)}"`), id);
+    // Every look is named on the page.
+    assert.equal(new Set(PERSONAS.map((id) => LOOKS[id])).size, 5);
   });
 }

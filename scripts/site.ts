@@ -1,8 +1,10 @@
 /**
  * Builds the live demo site into site/: the demo report in English (index.html) and
  * Chinese (zh.html), each with a small badge saying it's sample data and how to get
- * your own, and a page of every personality and AI style (personalities.html,
- * zh-personalities.html). GitHub Pages serves it; see .github/workflows/pages.yml.
+ * your own; a page of every personality and AI style (personalities.html,
+ * zh-personalities.html); and the same demo data drawn as each personality, so every
+ * look can be seen (sample-<id>.html, zh-sample-<id>.html). GitHub Pages serves it;
+ * see .github/workflows/pages.yml.
  *
  *   node scripts/site.ts
  */
@@ -11,16 +13,24 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { renderGallery } from './gallery.ts';
+import { strings } from '../src/i18n.ts';
+import { renderCard } from '../src/render/card.ts';
+import { renderHtml } from '../src/render/html.ts';
+import { renderPoster } from '../src/render/poster.ts';
+import type { Wrapped } from '../src/stats.ts';
+import { PERSONAS, renderGallery, sampleFile } from './gallery.ts';
 
 const REPO = 'https://github.com/qry6868/commitale';
 
 const PAGES = [
-  { lang: 'en', file: 'index.html', gallery: 'personalities.html', note: 'Sample data. Get your own:', all: 'All personalities', other: { href: 'zh.html', label: '中文' } },
-  { lang: 'zh', file: 'zh.html', gallery: 'zh-personalities.html', note: '示例数据。生成你自己的：', all: '全部人格', other: { href: './', label: 'English' } },
+  { lang: 'en', file: 'index.html', gallery: 'personalities.html', note: 'Sample data. Get your own:', all: 'All personalities &amp; styles', other: { href: 'zh.html', label: '中文' } },
+  { lang: 'zh', file: 'zh.html', gallery: 'zh-personalities.html', note: '示例数据。生成你自己的：', all: '全部人格和风格', other: { href: './', label: 'English' } },
 ] as const;
 
-const badge = (page: (typeof PAGES)[number]): string => `
+/** A page the badge goes on: the demo reports, or a sample, whose other language is its own twin. */
+type Page = Omit<(typeof PAGES)[number], 'file' | 'other'> & { other: { href: string; label: string } };
+
+const badge = (page: Page): string => `
 <style>
 .demo-badge{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:50;display:flex;gap:10px;align-items:center;
   max-width:calc(100vw - 32px);padding:8px 14px;border-radius:999px;font:500 13px/1.3 system-ui,sans-serif;color:#fff;white-space:nowrap;
@@ -51,4 +61,21 @@ for (const page of PAGES) {
   writeFileSync(join(out, page.gallery), renderGallery(page.lang, REPO));
   rmSync(tmp, { recursive: true, force: true });
 }
-console.log(`Wrote ${PAGES.flatMap((p) => [`site/${p.file}`, `site/${p.gallery}`]).join(', ')}`);
+// The same demo data drawn as each personality, in its own look.
+const json = spawnSync(process.execPath, [join(root, 'scripts', 'demo.ts'), '--json'], { stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024 });
+if (json.status !== 0) process.exit(json.status ?? 1);
+const demo = JSON.parse(json.stdout.toString()) as Wrapped;
+for (const page of PAGES) {
+  const t = strings(page.lang);
+  for (const id of PERSONAS) {
+    const w = { ...demo, personas: [id, ...demo.personas.filter((p) => p !== id)] };
+    const each = (render: typeof renderCard) => ({ wide: render(w, t, 'wide'), square: render(w, t, 'square'), story: render(w, t, 'story') });
+    const other = PAGES.find((p) => p !== page)!;
+    const html = renderHtml(w, t, { poster: each(renderPoster), data: each(renderCard) }).replace(
+      '</body>',
+      `${badge({ ...page, other: { href: sampleFile(other.lang, id), label: page.other.label } })}</body>`,
+    );
+    writeFileSync(join(out, sampleFile(page.lang, id)), html);
+  }
+}
+console.log(`Wrote ${PAGES.flatMap((p) => [`site/${p.file}`, `site/${p.gallery}`]).join(', ')}, and a sample report for each of ${PERSONAS.length} personalities in each language`);

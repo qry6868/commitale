@@ -8,7 +8,7 @@
 - **Some personalities get a look of their own.** The Weekend Warrior and the Bug Hunter read like a comic book: ink outlines, hard shadows, halftone dots and pages that slash in like panels. The Steady Builder is oil paint on canvas: earthy oil colours on a dark umber ground, brushed shapes, charts and cards, italic book-face headlines, and pages that bleed open like wet paint. The Early Bird and the 9-to-5er are minimal: paper, a single ink, light type, hairlines and a dotted heatmap, with pages that cross-fade. The Night Owl and the Polyglot are risograph prints: fluorescent inks on coloured paper stock, slightly off register, text in blue ink, and pages that feed in like paper through the drum. The Marathoner and the Cleaner keep the flat print look.
 - **Pages turn like a story now**: the next page opens as a circle from where you tapped (or from the side you swiped), while the last one sinks back.
 - **The personality reveal is a moment now**: every personality's badge spins past like a slot machine, slows down and lands on yours, with a burst of light, the name rising letter by letter and, with the soundtrack on, a chime.
-- The live demo has a page of [every personality and AI style](https://qry6868.github.io/commitale/personalities.html), with what earns each one.
+- The live demo has a page of [every personality and AI style](https://qry6868.github.io/commitale/personalities.html), with what earns each one, the look each personality's report is drawn in, and a sample report for every personality, so all five looks can be seen.
 - Every page fits on one screen on small phones (360×640 and up).
 - The wide poster shows your name.
 - The report and share text say "coding recap" / "Coding 年度报告", matching the posters.
