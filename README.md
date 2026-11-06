@@ -125,7 +125,7 @@ If nothing matches, Commitale lists the authors it found so you can pick yours.
 
 ### Put the card on your GitHub profile
 
-<img src="assets/demo-card.svg" alt="A Commitale share card: 653 commits, 22k lines added, 674M AI tokens, a 41-day streak, a commit heatmap and top languages. Personality: The Night Owl. AI style: The Pair Programmer." width="600">
+<img src="assets/demo-card.svg" alt="A Commitale share card: 656 commits, 22k lines added, 686M AI tokens, a 41-day streak, a commit heatmap and top languages. Personality: The Night Owl. AI style: The Pair Programmer." width="600">
 
 Commit the generated `commitale-2026.svg` to your profile repository (`<username>/<username>`) and add:
 

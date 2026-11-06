@@ -112,7 +112,7 @@ npx commitale ~/code -a me@work.com -a me@home.dev -a 1234+me@users.noreply.gith
 
 ### 把卡片放到 GitHub 个人主页
 
-<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：653 次提交、新增 2.2 万行代码、6.7 亿 AI token、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子；AI 搭档类型：结对搭档。" width="600">
+<img src="../assets/demo-card.svg" alt="Commitale 分享卡片：656 次提交、新增 2.2 万行代码、6.9 亿 AI token、最长连续 41 天，附提交热力图和常用语言。编程人格：夜猫子；AI 搭档类型：结对搭档。" width="600">
 
 把生成的 `commitale-2026.svg` 提交到你的个人主页仓库（`<用户名>/<用户名>`），然后在 README 中加入：
 

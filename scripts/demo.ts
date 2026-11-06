@@ -3,13 +3,17 @@
  * commitale on them. Handy for screenshots and for trying changes without
  * pointing the tool at your own code.
  *
- *   node scripts/demo.ts [--year 2026] [any commitale options]
+ *   node scripts/demo.ts [--year 2026] [--persona builder] [any commitale options]
+ *
+ * --persona shapes the history so that personality is what commitale finds, by its usual
+ * rules. Without it you get the Night Owl.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { PersonaId } from '../src/stats.ts';
 
 export const DEMO_AUTHOR = { name: 'Alex Chen', email: 'alex@example.dev' };
 const TEAMMATE = { name: 'Sam Rivera', email: 'sam@example.dev' };
@@ -27,8 +31,40 @@ const TOPICS = ['render loop', 'auth flow', 'dark mode', 'build cache', 'error h
 const FUNNY = ['fix prod please', 'wip', "it works, don't touch it", 'one more try', 'revert the revert', 'why was this ever working'];
 // Weighted toward evenings and late nights: the demo user is a night owl.
 const HOUR_WEIGHTS = [5, 4, 3, 1, 0.3, 0.1, 0.2, 0.5, 1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 5, 6, 7, 6];
+const DAYTIME = [0, 0, 0, 0, 0, 0, 0.2, 0.5, 1, 2, 3, 3, 2, 3, 3, 3, 3, 3, 2, 3, 3, 2, 1, 0.5];
+const FEW_REPOS = [5, 1, 0, 0, 0];
 
-export function createDemoRepos(dir: string, year: number, until = new Date(Date.UTC(year, 11, 31))): string[] {
+/** How a year of history leans, so it earns a personality by the usual rules. */
+interface Profile {
+  hours: number[];
+  /** The chance of committing on a weekend, and on a weekday. */
+  weekend: number;
+  weekday: number;
+  /** A month of committing every day, in March. */
+  sprint: boolean;
+  verbs: string[];
+  repos: number[];
+  /** Lines each file starts with, written by a teammate, and how many lines a commit adds and removes. */
+  seed?: number;
+  churn?: { add: number; remove: number };
+}
+
+const NIGHT_OWL: Profile = { hours: HOUR_WEIGHTS, weekend: 0.45, weekday: 0.62, sprint: true, verbs: VERBS, repos: REPOS.map((r) => r.weight) };
+const QUIET = { ...NIGHT_OWL, hours: DAYTIME, sprint: false };
+
+export const PROFILES: Record<PersonaId, Profile> = {
+  nightOwl: NIGHT_OWL,
+  earlyBird: { ...NIGHT_OWL, hours: [0, 0, 0, 0, 0.3, 3, 5, 6, 5, 3, 2, 2, 1, 1, 1, 1, 1, 1, 0.5, 0.3, 0.2, 0.1, 0, 0] },
+  weekendWarrior: { ...QUIET, weekend: 0.95, weekday: 0.25 },
+  marathoner: { ...QUIET, weekend: 0.3, weekday: 0.7, sprint: true },
+  bugHunter: { ...QUIET, verbs: ['fix', 'fix', 'fix', 'fix', 'fix', 'fix', 'feat', 'refactor', 'chore', 'test'] },
+  cleaner: { ...QUIET, verbs: ['refactor', 'chore', 'refactor', 'fix', 'chore', 'feat'], seed: 700, churn: { add: 6, remove: 44 } },
+  polyglot: { ...QUIET, repos: [3, 3, 3, 3, 2] },
+  nineToFive: { ...QUIET, hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 5, 5, 3, 5, 5, 5, 4, 3, 0.4, 0.2, 0, 0, 0, 0], weekend: 0.04, weekday: 0.85, repos: FEW_REPOS },
+  builder: { ...QUIET, hours: [0, 0, 0, 0, 0, 0, 0.5, 1, 1.5, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 2, 1], weekend: 0.4, weekday: 0.7, repos: FEW_REPOS },
+};
+
+export function createDemoRepos(dir: string, year: number, until = new Date(Date.UTC(year, 11, 31)), profile = NIGHT_OWL): string[] {
   const rand = mulberry32(year);
   const pick = <T>(items: T[]): T => items[Math.floor(rand() * items.length)];
   const weighted = (weights: number[]): number => {
@@ -38,6 +74,17 @@ export function createDemoRepos(dir: string, year: number, until = new Date(Date
 
   const streams = REPOS.map(() => [] as string[]);
   const contents = REPOS.map((r) => new Map(r.files.map((f) => [f, [] as string[]])));
+  if (profile.seed) {
+    // Code that was already there, by someone else, for the year to clean up.
+    const ident = `${TEAMMATE.name} <${TEAMMATE.email}> ${Date.UTC(year - 1, 11, 31) / 1000} +0800`;
+    REPOS.forEach((_, r) => {
+      streams[r].push('commit refs/heads/main', `author ${ident}`, `committer ${ident}`, data('chore: import'));
+      for (const [path, lines] of contents[r]) {
+        lines.push(...Array.from({ length: profile.seed! }, (_, k) => `line ${k}`));
+        streams[r].push(`M 100644 inline ${path}`, data(`${lines.join('\n')}\n`));
+      }
+    });
+  }
   const day = new Date(Date.UTC(year, 0, 1));
   const end = Math.min(until.getTime(), Date.UTC(year, 11, 31));
 
@@ -45,20 +92,20 @@ export function createDemoRepos(dir: string, year: number, until = new Date(Date
     const month = day.getUTCMonth();
     const date = day.getUTCDate();
     const weekend = day.getUTCDay() === 0 || day.getUTCDay() === 6;
-    const sprint = (month === 2 && date >= 2) || (month === 3 && date <= 9);
+    const sprint = profile.sprint && ((month === 2 && date >= 2) || (month === 3 && date <= 9));
     const vacation = month === 7 && date >= 5 && date <= 18;
-    const chance = sprint ? 1 : vacation ? 0.02 : weekend ? 0.45 : 0.62;
+    const chance = sprint ? 1 : vacation ? 0.02 : weekend ? profile.weekend : profile.weekday;
     if (rand() > chance) continue;
 
     const commits = rand() < 0.03 ? 18 + Math.floor(rand() * 20) : 1 + Math.floor(-Math.log(1 - rand()) * 2.5);
     for (let i = 0; i < commits; i++) {
-      const r = weighted(REPOS.map((x) => x.weight));
+      const r = weighted(profile.repos);
       // The teammate stays out of the sprint so the demo user's streak is unbroken.
       const author = r === 0 && !sprint && rand() < 0.15 ? TEAMMATE : DEMO_AUTHOR;
-      const hour = weighted(HOUR_WEIGHTS);
+      const hour = weighted(profile.hours);
       // Authored in UTC+8: the epoch time is eight hours before the wall clock.
       const epoch = Date.UTC(year, month, date, hour, Math.floor(rand() * 60)) / 1000 - 8 * 3600;
-      const subject = rand() < 0.05 ? pick(FUNNY) : `${pick(VERBS)}: ${pick(TOPICS)}`;
+      const subject = rand() < 0.05 ? pick(FUNNY) : `${pick(profile.verbs)}: ${pick(TOPICS)}`;
 
       const ident = `${author.name} <${author.email}> ${epoch} +0800`;
       const out = streams[r];
@@ -68,8 +115,9 @@ export function createDemoRepos(dir: string, year: number, until = new Date(Date
       const touched = new Set(Array.from({ length: 1 + Math.floor(rand() * 2) }, () => pick([...files.keys()])));
       for (const path of touched) {
         const lines = files.get(path)!;
-        if (lines.length > 220 || rand() < 0.2) lines.splice(Math.floor(rand() * lines.length), Math.floor(rand() * 40));
-        const add = 2 + Math.floor(rand() * 45);
+        if (profile.churn) lines.splice(Math.floor(rand() * lines.length), Math.floor(rand() * profile.churn.remove * 2));
+        else if (lines.length > 220 || rand() < 0.2) lines.splice(Math.floor(rand() * lines.length), Math.floor(rand() * 40));
+        const add = profile.churn ? 1 + Math.floor(rand() * profile.churn.add * 2) : 2 + Math.floor(rand() * 45);
         for (let k = 0; k < add; k++) lines.splice(Math.floor(rand() * (lines.length + 1)), 0, `line ${epoch}-${k} ${rand().toString(36).slice(2)}`);
         out.push(`M 100644 inline ${path}`, data(`${lines.join('\n')}\n`));
       }
@@ -77,7 +125,9 @@ export function createDemoRepos(dir: string, year: number, until = new Date(Date
   }
 
   rmSync(dir, { recursive: true, force: true });
-  return REPOS.map((repo, i) => {
+  // A repo this profile never touched has nothing to import.
+  return REPOS.flatMap((repo, i) => {
+    if (streams[i].length === 0) return [];
     const path = join(dir, repo.name);
     mkdirSync(path, { recursive: true });
     execFileSync('git', ['init', '-q', '-b', 'main', path]);
@@ -162,13 +212,16 @@ function mulberry32(seed: number): () => number {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
+  const personaIndex = args.indexOf('--persona');
+  const profile = personaIndex >= 0 ? PROFILES[args.splice(personaIndex, 2)[1] as PersonaId] : NIGHT_OWL;
+  if (!profile) throw new Error(`--persona takes one of: ${Object.keys(PROFILES).join(', ')}`);
   const yearIndex = args.indexOf('--year');
   const year = yearIndex >= 0 ? Number(args[yearIndex + 1]) : new Date().getFullYear();
   const dir = join(tmpdir(), 'commitale-demo');
   rmSync(dir, { recursive: true, force: true });
-  createDemoRepos(join(dir, 'this-year'), year, new Date());
+  createDemoRepos(join(dir, 'this-year'), year, new Date(), profile);
   // A year of history before it, so the report has something to compare with.
-  createDemoRepos(join(dir, 'last-year'), year - 1);
+  createDemoRepos(join(dir, 'last-year'), year - 1, undefined, profile);
   const aiEnv = createDemoAi(join(dir, 'ai-logs'), year, new Date());
   console.error(`Demo repos and AI logs created in ${dir}`);
   const cli = fileURLToPath(new URL('../src/cli.ts', import.meta.url));

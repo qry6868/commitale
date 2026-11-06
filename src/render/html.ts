@@ -426,6 +426,7 @@ body{margin:0;color:var(--ink);font-family:${FONT};--display:'${DISPLAY_FAMILY}'
 .slide.active{visibility:visible;z-index:2;clip-path:circle(150% at var(--ox,50%) var(--oy,50%));animation:open .85s cubic-bezier(.65,0,.2,1) both}
 .slide.active.settled,.slide.active.first{animation:none;clip-path:none}
 @keyframes open{from{clip-path:circle(0% at var(--ox,50%) var(--oy,50%))}}
+@keyframes calm-fade{from{opacity:0}}
 .slide.leaving{visibility:visible;z-index:1}
 .slide.leaving .inner{transform:scale(.94);opacity:.4;transition:transform .85s cubic-bezier(.65,0,.2,1),opacity .85s ease}
 .grain{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:.22;mix-blend-mode:soft-light;
@@ -615,11 +616,11 @@ code{display:inline-block;margin-top:8px;padding:8px 12px;border-radius:10px;bac
   .hours{height:100px}.ticks{margin:6px 0 10px}.rows{gap:6px}.viz .label{margin-top:8px}
   .repos{gap:8px}.repos li{padding:10px 14px;gap:4px 12px}.repos .name{font-size:18px;gap:6px}.meta br{display:none}
   .types{grid-template-columns:1fr 1fr;column-gap:18px}.row.type{grid-template-columns:1fr 40px}.row.type em:first-of-type{display:none}
-  .sub{font-size:16px;margin-top:8px}.chips{margin:4px 0 8px}
+  .sub{font-size:16px;margin-top:8px}.chips{margin:4px 0 8px;gap:6px 8px}.chip{font-size:14px!important}.chips .chip:nth-child(n+11){display:none}
   .moment{padding:10px 14px}blockquote{font-size:15px}
   .summary{gap:12px}.summary-head .formats{margin-top:6px}.readme{display:none}
   .avatar{width:92px}.emoji-wrap{margin-bottom:6px}.stats{margin-top:12px}.badges{margin-top:14px}}
-@media (prefers-reduced-motion:reduce){.slide.active{animation:none;clip-path:none}.slide.leaving{visibility:hidden}.reveal{opacity:1;transform:none;transition:none}
+@media (prefers-reduced-motion:reduce){.slide.active{animation:calm-fade .25s ease both;clip-path:none}.slide.active.settled,.slide.active.first{animation:none}.slide.leaving .inner{transform:none;opacity:1;transition:none}.reveal{opacity:1;transform:none;transition:none}
   .music.on i,.arrow,.in .heat i,.in .hours i,.in .row b i,.landed .avatar,.in .col i,.in .ratio i,.in .share i{animation:none}
   .persona-name .ch,.after{opacity:1;transform:none;animation:none;transition:none}.burst,.sparks{display:none}}
 `;

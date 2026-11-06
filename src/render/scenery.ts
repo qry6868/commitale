@@ -47,8 +47,15 @@ const COLOURS: Record<PersonaId, Colours> = {
   builder: { fields: [SIENNA, ULTRAMARINE, OCHRE, SAP, MADDER], stage: OCHRE, key: OCHRE, ground: UMBER },
 };
 
-/** A personality's colours, for the share posters to draw with. */
+/** A personality's colours, for the share images to draw with. */
 export const coloursFor = (persona: PersonaId): Colours => COLOURS[persona];
+
+/** The ground the share images sit on, its text and its highlight: the report's data page. */
+export function groundFor(persona: PersonaId): { bg: string; ink: string; key: string } {
+  const c = COLOURS[persona];
+  const bg = c.ground ?? NIGHT;
+  return { bg, ink: tone(bg) === 'light' ? (c.ink ?? INK) : CREAM, key: c.key };
+}
 
 type Form = 'circle' | 'half' | 'quarter' | 'square' | 'ring' | 'bar' | 'tri';
 
@@ -155,7 +162,8 @@ const STAGE_MIN: Shape[] = [
 
 // The reveal: a sunrise of a half-disc behind the badge, and a ring.
 const STAGE: Shape[] = [
-  { form: 'half', w: '84vmin', h: '42vmin', at: { right: '-26vmin', bottom: '-1vmin' }, from: '0, 50vmin', colour: 0 },
+  // Kept low and to the side: the stats run most of the way across the page.
+  { form: 'half', w: '58vmin', h: '29vmin', at: { right: '-22vmin', bottom: '-1vmin' }, from: '0, 34vmin', colour: 0 },
   { form: 'ring', w: '22vmin', at: { right: '8vw', top: '10vh' }, from: '0, -40vmin', colour: 1 },
 ];
 

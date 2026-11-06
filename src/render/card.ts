@@ -1,10 +1,11 @@
-import { calendar, compact, escapeXml as esc, fmt, heatLevels, onDark, pct } from '../format.ts';
+import { calendar, compact, escapeXml as esc, fmt, heatLevels, pct } from '../format.ts';
 import type { Strings } from '../i18n.ts';
 import { aiStyle } from '../ai.ts';
 import { change, type Wrapped } from '../stats.ts';
 import { aiArt, personaArt, type Place } from './art.ts';
 import { DISPLAY_FAMILY, FONT_FACE } from './font.ts';
-import { themeFor } from './theme.ts';
+import { GREEN, RED } from './palette.ts';
+import { groundFor } from './scenery.ts';
 
 /** Headlines and big numbers: Space Grotesk where it has the glyphs, the system face for the rest. */
 export const DISPLAY = () => `'${DISPLAY_FAMILY}', ${FONT}`;
@@ -73,8 +74,12 @@ const LAYOUTS: Record<CardFormat, Layout> = {
   },
 };
 
-const UP = '#86efac';
-const DOWN = '#fda4af';
+const UP = GREEN;
+const DOWN = RED;
+/** Heatmap levels 1 to 4, as strengths of the key colour. */
+const HEAT = [0, 0.3, 0.55, 0.8, 1];
+/** The top languages, as strengths of the key colour. */
+const SHADES = [1, 0.72, 0.5, 0.32];
 
 export interface CardOptions {
   /**
@@ -87,7 +92,7 @@ export interface CardOptions {
 export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', options: CardOptions = {}): string {
   const L = LAYOUTS[format];
   const [W, H] = CARD_SIZES[format];
-  const theme = themeFor(w);
+  const ground = groundFor(w.personas[0]);
   const persona = t.personas[w.personas[0]];
   const prev = w.previous;
 
@@ -117,11 +122,11 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
       const delta =
         tile.delta === undefined || !tile.base
           ? ''
-          : `<text x="${x + T.w - pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.delta}" font-weight="700" text-anchor="end" fill="${tile.delta >= 0 ? UP : DOWN}">${esc(t.cardVs(tile.delta, tile.base.year, tile.base.partial))}</text>`;
-      return `<rect x="${x}" y="${y}" width="${T.w}" height="${T.h}" rx="${Math.round(T.h / 6.6)}" fill="#fff" fill-opacity="0.07"/>
+          : `<text x="${x + T.w - pad}" y="${y + Math.round(T.delta * 1.9)}" font-size="${T.delta}" font-weight="700" text-anchor="end" fill="${tile.delta >= 0 ? UP : DOWN}">${esc(t.cardVs(tile.delta, tile.base.year, tile.base.partial))}</text>`;
+      return `<rect x="${x}" y="${y}" width="${T.w}" height="${T.h}" rx="${Math.round(T.h / 6.6)}" fill="currentColor" fill-opacity="0.07"/>
   ${delta}
-  <text x="${x + pad}" y="${y + Math.round(T.h * 0.58)}" font-size="${T.num}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(tile.value)}</text>
-  <text x="${x + pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.label}" fill="#fff" fill-opacity="0.66">${esc(tile.label)}</text>`;
+  <text x="${x + pad}" y="${y + Math.round(T.h * 0.58)}" font-size="${T.num}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(tile.value)}</text>
+  <text x="${x + pad}" y="${y + Math.round(T.h * 0.84)}" font-size="${T.label}" fill="currentColor" fill-opacity="0.66">${esc(tile.label)}</text>`;
     })
     .join('\n  ');
 
@@ -132,34 +137,27 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
   const heatX = format === 'wide' ? L.pad : L.pad + Math.round((W - 2 * L.pad - cols * step) / 2);
   const heat = cells
     .map((c) => {
-      const fill = theme.heat[level(w.daily[c.date] ?? 0)];
-      return `<rect x="${(heatX + c.col * step).toFixed(1)}" y="${(L.heat.y + c.row * step).toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" rx="${(cell / 4.4).toFixed(1)}" fill="${fill}"/>`;
+      const lvl = level(w.daily[c.date] ?? 0);
+      const fill = lvl === 0 ? 'fill="currentColor" fill-opacity="0.08"' : `fill="${ground.key}" fill-opacity="${HEAT[lvl]}"`;
+      return `<rect x="${(heatX + c.col * step).toFixed(1)}" y="${(L.heat.y + c.row * step).toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" rx="${(cell / 4.4).toFixed(1)}" ${fill}/>`;
     })
     .join('');
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${FONT}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="${FONT}" color="${ground.ink}">
   <defs>${options.embedFont ? `<style>${FONT_FACE}</style>` : ''}
-    <linearGradient id="${format}-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${theme.bg[0]}"/>
-      <stop offset="0.55" stop-color="${theme.bg[1]}"/>
-      <stop offset="1" stop-color="${theme.bg[2]}"/>
-    </linearGradient>
-    <filter id="${format}-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${Math.round(W / 17)}"/></filter>
     <clipPath id="${format}-frame"><rect width="${W}" height="${H}" rx="28"/></clipPath>
   </defs>
   <g clip-path="url(#${format}-frame)">
-    <rect width="${W}" height="${H}" fill="url(#${format}-bg)"/>
-    <circle cx="${W - 80}" cy="20" r="${Math.round(W * 0.22)}" fill="${theme.glow[0]}" fill-opacity="0.45" filter="url(#${format}-glow)"/>
-    <circle cx="80" cy="${H + 10}" r="${Math.round(W * 0.19)}" fill="${theme.glow[1]}" fill-opacity="0.32" filter="url(#${format}-glow)"/>
+    <rect id="${format}-bg" width="${W}" height="${H}" fill="${ground.bg}"/>
   </g>
-  <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${theme.accent}">COMMITALE · ${w.year}</text>
-  <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(t.cardTitle(w.year))}</text>
-  <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="#fff" fill-opacity="0.7">${esc(w.name)}</text>
-  ${badges.length === 1 ? personaBlock(L, theme.accent, badges[0].icon, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, theme.accent, badges[0], badges[1])}
+  <text x="${L.pad}" y="${L.kicker[0]}" font-size="${L.kicker[1]}" font-weight="700" letter-spacing="${L.kicker[1] / 5}" fill="${ground.key}">COMMITALE · ${w.year}</text>
+  <text x="${L.pad}" y="${L.title[0]}" font-size="${L.title[1]}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(t.cardTitle(w.year))}</text>
+  <text x="${L.pad}" y="${L.name[0]}" font-size="${L.name[1]}" fill="currentColor" fill-opacity="0.7">${esc(w.name)}</text>
+  ${badges.length === 1 ? personaBlock(L, ground.key, badges[0].icon, t.youAre, persona.name, persona.desc(w)) : badgePair(L, format, ground.key, badges[0], badges[1])}
   ${tiles}
   ${heat}
-  ${languages(w, t, L, theme.accent, format)}
-  <text x="${format === 'square' ? W - L.pad : L.pad}" y="${L.footer[0]}" font-size="${L.footer[1]}" fill="#fff" fill-opacity="0.55" font-family="${MONO}"${format === 'square' ? ' text-anchor="end"' : ''}>$ npx commitale</text>
+  ${languages(w, t, L, ground.key, format)}
+  <text x="${format === 'square' ? W - L.pad : L.pad}" y="${L.footer[0]}" font-size="${L.footer[1]}" fill="currentColor" fill-opacity="0.55" font-family="${MONO}"${format === 'square' ? ' text-anchor="end"' : ''}>$ npx commitale</text>
 </svg>
 `;
 }
@@ -167,20 +165,20 @@ export function renderCard(w: Wrapped, t: Strings, format: CardFormat = 'wide', 
 function personaBlock(L: Layout, accent: string, icon: Icon, youAre: string, name: string, desc: string): string {
   const P = L.persona;
   const textX = P.x + P.emoji * 2;
-  const box = `<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${Math.round(Math.min(P.h, 220) / 5)}" fill="#fff" fill-opacity="0.08"/>
+  const box = `<rect x="${P.x}" y="${P.y}" width="${P.w}" height="${P.h}" rx="${Math.round(Math.min(P.h, 220) / 5)}" fill="currentColor" fill-opacity="0.08"/>
   ${icon(P.x + Math.round(P.emoji / 2), P.y + Math.round(P.h / 2 - P.emoji / 2), P.emoji)}`;
   if (!P.desc) {
     return `${box}
   <text x="${textX}" y="${P.y + Math.round(P.h / 2 - P.name * 0.3)}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
-  <text x="${textX}" y="${P.y + Math.round(P.h / 2 + P.name * 0.75)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(name)}</text>`;
+  <text x="${textX}" y="${P.y + Math.round(P.h / 2 + P.name * 0.75)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(name)}</text>`;
   }
   // SVG doesn't wrap text, so break the description into at most two lines ourselves.
   const lines = wrap(desc, Math.floor((P.x + P.w - 40 - textX) / (P.desc * 0.52)), 2);
   const top = P.y + Math.round((P.h - (P.label + P.name * 1.4 + lines.length * P.desc * 1.4)) / 2);
   return `${box}
   <text x="${textX}" y="${top + P.label}" font-size="${P.label}" font-weight="700" letter-spacing="${P.label / 10}" fill="${accent}">${esc(youAre.toUpperCase())}</text>
-  <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(name)}</text>
-  ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
+  <text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25)}" font-size="${P.name}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(name)}</text>
+  ${lines.map((line, i) => `<text x="${textX}" y="${top + P.label + Math.round(P.name * 1.25) + Math.round(P.desc! * 1.5 * (i + 1))}" font-size="${P.desc}" fill="currentColor" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 
 /** What sits beside a badge's words, drawn with its top-left corner at (x, top). */
@@ -215,10 +213,10 @@ function badgePair(L: Layout, format: CardFormat, accent: string, a: Badge, b: B
 /** Emoji on the left, label and name beside it. */
 function rowBadge(x: number, y: number, w: number, h: number, b: Badge, size: { emoji: number; label: number; name: number }, accent: string): string {
   const textX = x + size.emoji * 2;
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(Math.min(h, 120) / 5)}" fill="#fff" fill-opacity="0.08"/>
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${Math.round(Math.min(h, 120) / 5)}" fill="currentColor" fill-opacity="0.08"/>
   ${b.icon(x + Math.round(size.emoji / 2), y + Math.round(h / 2 - size.emoji / 2), size.emoji)}
   <text x="${textX}" y="${y + Math.round(h / 2 - size.name * 0.3)}" font-size="${size.label}" font-weight="700" letter-spacing="${size.label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
-  <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>`;
+  <text x="${textX}" y="${y + Math.round(h / 2 + size.name * 0.75)}" font-size="${size.name}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(b.name)}</text>`;
 }
 
 /** Emoji on top, then label, name and a two-line description: for the tall story card. */
@@ -227,11 +225,11 @@ function columnBadge(x: number, y: number, w: number, h: number, b: Badge, accen
   const labelY = y + pad + emoji + 34;
   const nameY = labelY + Math.round(name * 1.3);
   const lines = wrap(b.desc, Math.floor((w - 2 * pad) / (desc * 0.52)), 2);
-  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="#fff" fill-opacity="0.08"/>
+  return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="44" fill="currentColor" fill-opacity="0.08"/>
   ${b.icon(x + pad, y + pad + Math.round(emoji * 0.04), emoji)}
   <text x="${x + pad}" y="${labelY}" font-size="${label}" font-weight="700" letter-spacing="${label / 10}" fill="${accent}">${esc(b.label.toUpperCase())}</text>
-  <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="700" font-family="${DISPLAY()}" fill="#fff">${esc(b.name)}</text>
-  ${lines.map((line, i) => `<text x="${x + pad}" y="${nameY + Math.round(desc * 1.5 * (i + 1))}" font-size="${desc}" fill="#fff" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
+  <text x="${x + pad}" y="${nameY}" font-size="${name}" font-weight="700" font-family="${DISPLAY()}" fill="currentColor">${esc(b.name)}</text>
+  ${lines.map((line, i) => `<text x="${x + pad}" y="${nameY + Math.round(desc * 1.5 * (i + 1))}" font-size="${desc}" fill="currentColor" fill-opacity="0.72">${esc(line)}</text>`).join('\n  ')}`;
 }
 
 /**
@@ -264,22 +262,21 @@ function languages(w: Wrapped, t: Strings, L: Layout, accent: string, id: string
   if (top.length === 0) return '';
   const barH = Math.round(G.size * 0.66);
   const barY = G.mode === 'list' ? G.y + Math.round(G.size * 0.8) : G.y;
-  const rest = 1 - top.reduce((s, l) => s + l.share, 0);
   let x = G.x;
-  const segments = [...top.map((l) => ({ color: onDark(l.color), share: l.share })), { color: '#6b6385', share: rest }]
+  const segments = [...top.map((l, i) => ({ opacity: SHADES[i], share: l.share }))]
     .filter((s) => s.share > 0.001)
     .map((s) => {
       const width = s.share * G.w;
-      const rect = `<rect x="${x.toFixed(1)}" y="${barY}" width="${width.toFixed(1)}" height="${barH}" fill="${s.color}"/>`;
+      const rect = `<rect x="${x.toFixed(1)}" y="${barY}" width="${width.toFixed(1)}" height="${barH}" fill="${accent}" fill-opacity="${s.opacity}"/>`;
       x += width;
       return rect;
     })
     .join('');
   const bar = `<clipPath id="${id}-bar"><rect x="${G.x}" y="${barY}" width="${G.w}" height="${barH}" rx="${barH / 2}"/></clipPath>
-  <g clip-path="url(#${id}-bar)"><rect x="${G.x}" y="${barY}" width="${G.w}" height="${barH}" fill="#6b6385"/>${segments}</g>`;
+  <g clip-path="url(#${id}-bar)"><rect x="${G.x}" y="${barY}" width="${G.w}" height="${barH}" fill="currentColor" fill-opacity="0.15"/>${segments}</g>`;
 
-  const dot = (cx: number, y: number, color: string): string =>
-    `<circle cx="${cx}" cy="${y - G.size * 0.33}" r="${G.size / 3}" fill="${onDark(color)}"/>`;
+  const dot = (cx: number, y: number, i: number): string =>
+    `<circle cx="${cx}" cy="${y - G.size * 0.33}" r="${G.size / 3}" fill="${accent}" fill-opacity="${SHADES[i]}"/>`;
   const shown = top.slice(0, G.rows);
   if (G.mode === 'inline') {
     const slot = G.w / shown.length;
@@ -288,7 +285,7 @@ function languages(w: Wrapped, t: Strings, L: Layout, accent: string, id: string
   ${shown
     .map((l, i) => {
       const lx = G.x + i * slot;
-      return `${dot(lx + G.size / 3, y, l.color)}<text x="${lx + G.size}" y="${y}" font-size="${G.size}" fill="#fff">${esc(l.name)} <tspan fill-opacity="0.66">${pct(l.share)}%</tspan></text>`;
+      return `${dot(lx + G.size / 3, y, i)}<text x="${lx + G.size}" y="${y}" font-size="${G.size}" fill="currentColor">${esc(l.name)} <tspan fill-opacity="0.66">${pct(l.share)}%</tspan></text>`;
     })
     .join('\n  ')}`;
   }
@@ -298,8 +295,8 @@ function languages(w: Wrapped, t: Strings, L: Layout, accent: string, id: string
   ${shown
     .map((l, i) => {
       const y = barY + barH + Math.round(G.size * 1.9) + i * rowH;
-      return `${dot(G.x + G.size / 3, y, l.color)}<text x="${G.x + G.size}" y="${y}" font-size="${G.size}" fill="#fff">${esc(l.name)}</text>
-  <text x="${G.x + G.w}" y="${y}" font-size="${G.size}" fill="#fff" fill-opacity="0.66" text-anchor="end">${pct(l.share)}%</text>`;
+      return `${dot(G.x + G.size / 3, y, i)}<text x="${G.x + G.size}" y="${y}" font-size="${G.size}" fill="currentColor">${esc(l.name)}</text>
+  <text x="${G.x + G.w}" y="${y}" font-size="${G.size}" fill="currentColor" fill-opacity="0.66" text-anchor="end">${pct(l.share)}%</text>`;
     })
     .join('\n  ')}`;
 }

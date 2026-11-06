@@ -175,5 +175,7 @@ export const LOOK_CSS = `
   .look-minimal .kicker{gap:10px;letter-spacing:.16em;margin-bottom:6px}.look-minimal .kicker::before{width:18px}.look-minimal .chip{border:0;padding-left:0}}
 /* Phones get the looks without the costly filters. */
 @media (max-width:760px),(pointer:coarse){.look-painterly .scene,.look-painterly .art,.look-painterly ${CARDS}::before,.look-painterly .kicker::before,.look-painterly :is(.hours,.heat,.ratio,.stack,.col i,.row b i,.share i){filter:none}}
-@media (prefers-reduced-motion:reduce){:is(.look-pop,.look-painterly,.look-minimal,.look-riso) .slide.active{animation:none!important;clip-path:none;-webkit-mask:none;mask:none}}
+/* No page-turn flourishes when motion is reduced: every look just fades, over a still page. */
+@media (prefers-reduced-motion:reduce){:is(.look-pop,.look-painterly,.look-minimal,.look-riso) .slide.active:not(.settled):not(.first){animation:calm-fade .25s ease both!important;clip-path:none;-webkit-mask:none;mask:none}
+  :is(.look-pop,.look-painterly,.look-minimal,.look-riso) .slide.leaving .inner{transform:none;opacity:1;transition:none}}
 `;

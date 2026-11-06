@@ -50,6 +50,7 @@ for (const lang of ['en', 'zh'] as const) {
           // Share images never name a repo; the report the user keeps can.
           assert.doesNotMatch(cards[f], /NaN|undefined|Ada <&>|secret-plans/, `${persona} ${f}`);
           assert.ok(cards[f].includes(`id="${f}-bg"`), 'ids are unique per format');
+          assert.doesNotMatch(cards[f], /Gradient|<filter/, `${persona} card ${f} is flat`);
           assert.equal(cards[f].includes(t.cardVs(50, 2025, false)), Boolean(previous), `${persona} ${f} comparison`);
         }
         const posters = Object.fromEntries(FORMATS.map((f) => [f, renderPoster(w, t, f)])) as Record<CardFormat, string>;
@@ -107,9 +108,9 @@ for (const lang of ['en', 'zh'] as const) {
         assert.doesNotMatch(html, /(linear|radial)-gradient\(/, `${persona} has no gradients`);
         // Moments and quirks carry drawn icons, and the charts keep to the palette.
         assert.ok([...html.matchAll(/<div class="moment[^"]*"[^>]*>\s*<span class="icon"><svg class="ico"/g)].length >= 3, `${persona} moment icons`);
-        // (The share images on the last page keep their own look.)
-        const pages = html.slice(0, html.lastIndexOf('<section class="slide'));
-        assert.doesNotMatch(pages, /[🌅🌙💥🏁]|#86efac|#fda4af|#3987e5/u, `${persona} no emoji icons or off-palette colours`);
+        assert.doesNotMatch(html, /#86efac|#fda4af|#3987e5/, `${persona} no off-palette colours`);
+        // (The text people share, in the page's script, may carry an emoji.)
+        assert.doesNotMatch(html.slice(0, html.indexOf('<script>')), /[🌅🌙💥🏁]/u, `${persona} no emoji icons`);
         // Each personality's report is drawn in its own look; only the painterly one needs filters.
         assert.ok(html.includes(`<body class="look-${LOOKS[persona]}">`), `${persona} look`);
         assert.equal(html.includes('id="lk-paint"'), LOOKS[persona] === 'painterly', `${persona} paint filters`);
